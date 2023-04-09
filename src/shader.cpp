@@ -1,0 +1,76 @@
+#include "shader.h"
+
+#include <fstream>
+#include <streambuf>
+
+Shader::Shader() {}
+
+Shader::Shader(std::string vertex_file, std::string fragment_file) {
+  std::string vertex_code_str = loadShaderFile(vertex_file);
+  std::string fragment_code_str = loadShaderFile(fragment_file);
+
+  const char* vertex_code = vertex_code_str.c_str();
+  const char* fragment_code = fragment_code_str.c_str();
+
+  GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(vertex_shader, 1, &vertex_code, NULL);
+  glCompileShader(vertex_shader);
+  compileErrorCheck(vertex_shader);
+
+  GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+  glShaderSource(fragment_shader, 1, &fragment_code, NULL);
+  glCompileShader(fragment_shader);
+  compileErrorCheck(fragment_shader);
+
+  id_ = glCreateProgram();
+
+  glAttachShader(id_, vertex_shader);
+  glAttachShader(id_, fragment_shader);
+  glLinkProgram(id_);
+
+  glDeleteShader(vertex_shader);
+  glDeleteShader(fragment_shader);
+}
+
+std::string Shader::loadShaderFile(std::string filename) {
+  std::ifstream input_file(filename, std::ifstream::in);
+
+  if (!input_file.is_open()) {
+    std::cout << "File : " << filename << " could not be opened" << std::endl;
+  }
+
+  return std::string(std::istreambuf_iterator<char>(input_file),
+                     std::istreambuf_iterator<char>());
+}
+
+void Shader::compileErrorCheck(GLuint shader) {
+  GLint is_compiled = 0;
+  glGetShaderiv(shader, GL_COMPILE_STATUS, &is_compiled);
+
+  if (is_compiled == GL_FALSE) {
+    GLint max_length = 0;
+    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &max_length);
+
+    GLchar error_log[max_length];
+    glGetShaderInfoLog(shader, max_length, &max_length, error_log);
+
+    std::cout << "Shader compilation failed" << std::endl;
+    std::cout << error_log << std::endl;
+
+    glDeleteShader(shader);
+  } else {
+    std::cout << "Shader compilation successful" << std::endl;
+  }
+}
+
+void Shader::activate() { glUseProgram(id_); }
+
+void Shader::clean() { glDeleteProgram(id_); }
+
+void Shader::setUniform(std::string name, float x) {
+  glUniform1f(glGetUniformLocation(id_, name.c_str()), x);
+}
+
+void Shader::setUniform(std::string name, float x, float y, float z, float w) {
+  glUniform4f(glGetUniformLocation(id_, name.c_str()), x, y, z, w);
+}
