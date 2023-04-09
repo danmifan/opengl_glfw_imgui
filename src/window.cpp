@@ -5,10 +5,10 @@
 #include <imgui_impl_opengl3.h>
 
 #include <chrono>
-#include <iostream>
-#include <thread>
 #include <fstream>
+#include <iostream>
 #include <streambuf>
+#include <thread>
 
 float color[4] = {0.8f, 0.3f, 0.02f, 1.0f};
 GLuint fbo;
@@ -81,21 +81,38 @@ int MyWindow::init() {
   vbo_.unbind();
   vao_->unbind();
 
+  camera_ = new Camera(800, 600, glm::vec3(0.0f, 0.0f, 2.0f));
+
   return 1;
 }
 
 void MyWindow::update() {
+  glEnable(GL_DEPTH_TEST);
+
+  glfwSetWindowUserPointer(window_, this);
+  glfwSetKeyCallback(window_, [](GLFWwindow *window, int key, int scancode,
+                                 int action, int mods) {
+    static_cast<MyWindow *>(glfwGetWindowUserPointer(window))
+        ->keyCallback(window, key, scancode, action, mods);
+  });
+
   while (!glfwWindowShouldClose(window_)) {
     auto t1 = std::chrono::high_resolution_clock::now();
 
     glViewport(0, 0, 800, 600);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     glClearColor(0, 0, 0, 1.00f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     shader_.activate();
     shader_.setUniform("size", size);
     shader_.setUniform("color", color[0], color[1], color[2], color[3]);
+
+    glm::mat4 mat = camera_->matrix(45.0f, 0.1f, 100.0f);
+    shader_.setUniform("cam_matrix", glm::value_ptr(mat));
+
+    glm::vec3 pos = camera_->getPosition();
+    // std::cout << pos.x << " " << pos.y << " " << pos.z << std::endl;
 
     vao_->bind();
 
@@ -137,6 +154,7 @@ void MyWindow::update() {
     // ImGui::DockSpace(dockspace_id, ImVec2(0, 0));
 
     ImGui::Begin("Test");
+    ImGui::Text("x %f y %f z %f", pos.x, pos.y, pos.z);
     // ImGui::Button("Teeest");
     ImGui::Image((void *)(intptr_t)texture_.getId(), ImVec2(800, 600));
 
@@ -182,4 +200,38 @@ void MyWindow::shutdown() {
   shader_.clean();
 
   glDeleteFramebuffers(1, &fbo);
+}
+
+void MyWindow::keyCallback(GLFWwindow *window, int key, int scancode,
+                           int action, int mods) {
+  // if (action == GLFW_PRESS) {
+  switch (key) {
+    case GLFW_KEY_W:
+      camera_->forward();
+      break;
+
+    case GLFW_KEY_S:
+      camera_->backward();
+      break;
+
+    case GLFW_KEY_A:
+      camera_->left();
+      break;
+
+    case GLFW_KEY_D:
+      camera_->right();
+      break;
+
+    case GLFW_KEY_E:
+      camera_->up();
+      break;
+
+    case GLFW_KEY_Q:
+      camera_->down();
+      break;
+
+    default:
+      break;
+  }
+  // }
 }

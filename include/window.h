@@ -4,13 +4,14 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
+#include <glm/ext.hpp>
 
 #include <list>
 
 #include "shader.h"
 #include "texture.h"
 #include "vao.h"
+#include "camera.h"
 
 class MyWindow {
  public:
@@ -29,6 +30,10 @@ class MyWindow {
   Texture texture_;
   VBO vbo_;
   VAO* vao_;
+  Camera* camera_;
+
+  void keyCallback(GLFWwindow* window, int key, int scancode, int action,
+                   int mods);
 };
 
 #endif  // IMGUI_WINDOW_H
