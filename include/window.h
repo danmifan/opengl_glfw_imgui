@@ -12,6 +12,7 @@
 #include "texture.h"
 #include "vao.h"
 #include "camera.h"
+#include "framebuffer.h"
 
 class MyWindow {
  public:
@@ -27,10 +28,11 @@ class MyWindow {
   unsigned char* image_data_;
   int framerate_;
   Shader shader_;
-  Texture texture_;
-  VBO vbo_;
-  VAO* vao_;
-  Camera* camera_;
+  // Texture texture_;
+  VAO vao_;
+  Camera camera_;
+  Framebuffer framebuffer_;
+  bool demo_ = false;
 
   void keyCallback(GLFWwindow* window, int key, int scancode, int action,
                    int mods);

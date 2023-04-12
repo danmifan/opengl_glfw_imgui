@@ -28,6 +28,16 @@ Shader::Shader(std::string vertex_file, std::string fragment_file) {
   glAttachShader(id_, fragment_shader);
   glLinkProgram(id_);
 
+  // check for linking errors
+  int success;
+  char info_log[256];
+  glGetProgramiv(id_, GL_LINK_STATUS, &success);
+  if (!success) {
+    glGetProgramInfoLog(id_, sizeof(info_log), NULL, info_log);
+    std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
+              << info_log << std::endl;
+  }
+
   glDeleteShader(vertex_shader);
   glDeleteShader(fragment_shader);
 }

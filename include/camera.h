@@ -8,7 +8,7 @@
 
 class Camera {
  public:
-  Camera(int width, int height, glm::vec3 position);
+  void create(int width, int height, glm::vec3 position);
   glm::mat4 matrix(float fov, float near, float far);
 
   void forward();

@@ -11,7 +11,6 @@
 #include <thread>
 
 float color[4] = {0.8f, 0.3f, 0.02f, 1.0f};
-GLuint fbo;
 float size = 1.0f;
 
 MyWindow::MyWindow(int width, int height, int framerate)
@@ -56,38 +55,32 @@ int MyWindow::init() {
   ImGui_ImplOpenGL3_Init("#version 330");
 
   // Vertices coordinates
-  GLfloat vertices[] = {
-      -0.5f, -0.5f * float(sqrt(3)) / 3,    0.0f,  // Lower left corner
-      0.5f,  -0.5f * float(sqrt(3)) / 3,    0.0f,  // Lower right corner
-      0.0f,  0.5f * float(sqrt(3)) * 2 / 3, 0.0f   // Upper corner
-  };
+  // GLfloat vertices[] = {
+  //     -0.5f, -0.5f * float(sqrt(3)) / 3,    0.0f,  // Lower left corner
+  //     0.5f,  -0.5f * float(sqrt(3)) / 3,    0.0f,  // Lower right corner
+  //     0.0f,  0.5f * float(sqrt(3)) * 2 / 3, 0.0f   // Upper corner
+  // };
+
+  GLfloat vertices[] = {-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
+                        0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
+                        0.0f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f};
 
   shader_ = Shader("shaders/shader.vert", "shaders/shader.frag");
 
-  glGenFramebuffers(1, &fbo);
-  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+  framebuffer_.create(800, 600);
 
-  texture_ = Texture(GL_TEXTURE_2D, 800, 600);
+  vao_.create(vertices, sizeof(vertices));
+  vao_.bind();
+  vao_.link(0, 3, GL_FLOAT, sizeof(float), (void *)0);
+  vao_.unbind();
 
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                         texture_.getId(), 0);
-
-  vao_ = new VAO();
-
-  vbo_ = VBO(vertices, sizeof(vertices));
-  vao_->bind();
-  vao_->link(vbo_, 0, 3, GL_FLOAT, 3 * sizeof(float), (void *)0);
-
-  vbo_.unbind();
-  vao_->unbind();
-
-  camera_ = new Camera(800, 600, glm::vec3(0.0f, 0.0f, 2.0f));
+  camera_.create(800, 600, glm::vec3(0.0, 0.0, 2.0));
 
   return 1;
 }
 
 void MyWindow::update() {
-  glEnable(GL_DEPTH_TEST);
+  // glEnable(GL_DEPTH_TEST);
 
   glfwSetWindowUserPointer(window_, this);
   glfwSetKeyCallback(window_, [](GLFWwindow *window, int key, int scancode,
@@ -100,26 +93,29 @@ void MyWindow::update() {
     auto t1 = std::chrono::high_resolution_clock::now();
 
     glViewport(0, 0, 800, 600);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    framebuffer_.bind();
     glClearColor(0, 0, 0, 1.00f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
 
     shader_.activate();
     shader_.setUniform("size", size);
-    shader_.setUniform("color", color[0], color[1], color[2], color[3]);
+    // shader_.setUniform("color", color[0], color[1], color[2], color[3]);
 
-    glm::mat4 mat = camera_->matrix(45.0f, 0.1f, 100.0f);
+    glm::mat4 mat = camera_.matrix(45.0f, 0.1f, 100.0f);
     shader_.setUniform("cam_matrix", glm::value_ptr(mat));
 
-    glm::vec3 pos = camera_->getPosition();
+    glm::vec3 pos = camera_.getPosition();
 
-    vao_->bind();
-
-    texture_.bind();
+    // texture_.bind();
+    vao_.bind();
     glDrawArrays(GL_TRIANGLES, 0, 3);
+    // vao_.unbind();
+    // glDisableVertexAttribArray(0);
+    // glDisableVertexAttribArray(1);
+    // glUseProgram(0);
 
     glViewport(0, 0, width_, height_);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    framebuffer_.unbind();
     glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -129,6 +125,19 @@ void MyWindow::update() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+
+    if (ImGui::BeginMainMenuBar()) {
+      if (ImGui::BeginMenu("Menu")) {
+        ImGui::MenuItem("Demo", NULL, &demo_);
+
+        ImGui::EndMenu();
+      }
+      ImGui::EndMainMenuBar();
+    }
+
+    if (demo_) {
+      ImGui::ShowDemoWindow();
+    }
 
     // Opengl end
     // ImGuiWindowFlags window_flags =
@@ -154,12 +163,10 @@ void MyWindow::update() {
 
     ImGui::Begin("Test");
     ImGui::Text("x %f y %f z %f", pos.x, pos.y, pos.z);
-    ImGui::Image((void *)(intptr_t)texture_.getId(), ImVec2(800, 600),
-                 ImVec2(0, 1), ImVec2(1, 0));
+    ImGui::Image((void *)(intptr_t)framebuffer_.getTextureId(),
+                 ImVec2(800, 600), ImVec2(0, 1), ImVec2(1, 0));
 
     ImGui::End();
-
-    // ImGui::End();
 
     ImGui::Render();
 
@@ -185,6 +192,40 @@ void MyWindow::update() {
   }
 }
 
+void MyWindow::keyCallback(GLFWwindow *window, int key, int scancode,
+                           int action, int mods) {
+  // if (action == GLFW_PRESS) {
+  switch (key) {
+    case GLFW_KEY_W:
+      camera_.forward();
+      break;
+
+    case GLFW_KEY_S:
+      camera_.backward();
+      break;
+
+    case GLFW_KEY_A:
+      camera_.left();
+      break;
+
+    case GLFW_KEY_D:
+      camera_.right();
+      break;
+
+    case GLFW_KEY_E:
+      camera_.up();
+      break;
+
+    case GLFW_KEY_Q:
+      camera_.down();
+      break;
+
+    default:
+      break;
+  }
+  // }
+}
+
 void MyWindow::shutdown() {
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
@@ -193,44 +234,8 @@ void MyWindow::shutdown() {
   glfwTerminate();
   ImGui::DestroyContext();
 
-  vao_->clean();
-  vbo_.clean();
-  texture_.clean();
+  vao_.clean();
+  // texture_.clean();
   shader_.clean();
-
-  glDeleteFramebuffers(1, &fbo);
-}
-
-void MyWindow::keyCallback(GLFWwindow *window, int key, int scancode,
-                           int action, int mods) {
-  // if (action == GLFW_PRESS) {
-  switch (key) {
-    case GLFW_KEY_W:
-      camera_->forward();
-      break;
-
-    case GLFW_KEY_S:
-      camera_->backward();
-      break;
-
-    case GLFW_KEY_A:
-      camera_->left();
-      break;
-
-    case GLFW_KEY_D:
-      camera_->right();
-      break;
-
-    case GLFW_KEY_E:
-      camera_->up();
-      break;
-
-    case GLFW_KEY_Q:
-      camera_->down();
-      break;
-
-    default:
-      break;
-  }
-  // }
+  framebuffer_.clean();
 }

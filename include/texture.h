@@ -7,8 +7,8 @@
 
 class Texture {
  public:
-  Texture();
-  Texture(GLenum texture_type, int width, int height, const void* image = NULL);
+  GLuint create(GLenum texture_type, int width, int height,
+                const void* image = NULL);
   void bind();
   void unbind();
   void clean();

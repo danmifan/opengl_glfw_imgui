@@ -2,19 +2,21 @@
 #define VAO_H
 
 #include <iostream>
-#include "vbo.h"
+#include <GL/glew.h>
+#include <GL/gl.h>
 
 class VAO {
  public:
-  VAO();
-  void link(VBO& vbo, GLuint layout, GLuint num_components, GLenum type,
+  void create(GLfloat* vertices, GLsizeiptr size);
+  void link(GLuint layout, GLuint num_components, GLenum type,
             GLsizeiptr stride, void* offset);
   void bind();
   void unbind();
   void clean();
 
  private:
-  GLuint id_ = 0;
+  GLuint vao_id_;
+  GLuint vbo_id_;
 };
 
 #endif  // VAO_H

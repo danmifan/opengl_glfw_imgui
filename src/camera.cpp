@@ -1,6 +1,6 @@
 #include "camera.h"
 
-Camera::Camera(int width, int height, glm::vec3 position) {
+void Camera::create(int width, int height, glm::vec3 position) {
   width_ = width;
   height_ = height;
   position_ = position;

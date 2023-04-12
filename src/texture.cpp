@@ -1,9 +1,7 @@
 #include "texture.h"
 
-Texture::Texture() {}
-
-Texture::Texture(GLenum texture_type, int width, int height,
-                 const void* image) {
+GLuint Texture::create(GLenum texture_type, int width, int height,
+                       const void* image) {
   type_ = texture_type;
   glGenTextures(1, &id_);
   glBindTexture(type_, id_);
@@ -17,6 +15,8 @@ Texture::Texture(GLenum texture_type, int width, int height,
   // glTexParameteri(type_, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
   // glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+
+  return id_;
 }
 
 // void Texture::texUnit(Shader& shader, const char* uniform, GLuint unit)
