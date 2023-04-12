@@ -112,7 +112,6 @@ void MyWindow::update() {
     shader_.setUniform("cam_matrix", glm::value_ptr(mat));
 
     glm::vec3 pos = camera_->getPosition();
-    // std::cout << pos.x << " " << pos.y << " " << pos.z << std::endl;
 
     vao_->bind();
 
@@ -155,8 +154,8 @@ void MyWindow::update() {
 
     ImGui::Begin("Test");
     ImGui::Text("x %f y %f z %f", pos.x, pos.y, pos.z);
-    // ImGui::Button("Teeest");
-    ImGui::Image((void *)(intptr_t)texture_.getId(), ImVec2(800, 600));
+    ImGui::Image((void *)(intptr_t)texture_.getId(), ImVec2(800, 600),
+                 ImVec2(0, 1), ImVec2(1, 0));
 
     ImGui::End();
 

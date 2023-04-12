@@ -13,8 +13,8 @@ Texture::Texture(GLenum texture_type, int width, int height,
 
   glTexParameteri(type_, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(type_, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(type_, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(type_, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  // glTexParameteri(type_, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  // glTexParameteri(type_, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
   // glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 }
