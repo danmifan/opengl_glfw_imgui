@@ -13,6 +13,46 @@
 float color[4] = {0.8f, 0.3f, 0.02f, 1.0f};
 float size = 1.0f;
 
+// clang-format off
+  float vertices[] = {
+        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
+         0.5f,  0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
+         0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
+         0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f,
+         0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+         0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+         0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
+         0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f, 0.0f, 0.0f, 1.0f
+    };
+// clang-format on
 MyWindow::MyWindow(int width, int height, int framerate)
     : width_(width), height_(height), framerate_(framerate) {}
 
@@ -54,24 +94,14 @@ int MyWindow::init() {
   ImGui_ImplGlfw_InitForOpenGL(window_, true);
   ImGui_ImplOpenGL3_Init("#version 330");
 
-  // Vertices coordinates
-  // GLfloat vertices[] = {
-  //     -0.5f, -0.5f * float(sqrt(3)) / 3,    0.0f,  // Lower left corner
-  //     0.5f,  -0.5f * float(sqrt(3)) / 3,    0.0f,  // Lower right corner
-  //     0.0f,  0.5f * float(sqrt(3)) * 2 / 3, 0.0f   // Upper corner
-  // };
-
-  GLfloat vertices[] = {-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
-                        0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
-                        0.0f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f};
-
   shader_ = Shader("shaders/shader.vert", "shaders/shader.frag");
 
   framebuffer_.create(800, 600);
 
   vao_.create(vertices, sizeof(vertices));
   vao_.bind();
-  vao_.link(0, 3, GL_FLOAT, sizeof(float), (void *)0);
+  vao_.link(0, 3, GL_FLOAT, 6 * sizeof(float), (void *)0);
+  vao_.link(1, 3, GL_FLOAT, 6 * sizeof(float), (void *)(3 * sizeof(float)));
   vao_.unbind();
 
   camera_.create(800, 600, glm::vec3(0.0, 0.0, 2.0));
@@ -80,7 +110,8 @@ int MyWindow::init() {
 }
 
 void MyWindow::update() {
-  // glEnable(GL_DEPTH_TEST);
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LESS);
 
   glfwSetWindowUserPointer(window_, this);
   glfwSetKeyCallback(window_, [](GLFWwindow *window, int key, int scancode,
@@ -95,7 +126,7 @@ void MyWindow::update() {
     glViewport(0, 0, 800, 600);
     framebuffer_.bind();
     glClearColor(0, 0, 0, 1.00f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     shader_.activate();
     shader_.setUniform("size", size);
@@ -108,7 +139,7 @@ void MyWindow::update() {
 
     // texture_.bind();
     vao_.bind();
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_TRIANGLES, 0, sizeof(vertices));
     // vao_.unbind();
     // glDisableVertexAttribArray(0);
     // glDisableVertexAttribArray(1);
@@ -168,6 +199,16 @@ void MyWindow::update() {
 
     ImGui::End();
 
+    ImGuiWindowFlags window_flags =
+        ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking |
+        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
+        ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+    ImGui::SetNextWindowBgAlpha(0.35f);  // Transparent background
+    if (ImGui::Begin("Example: Simple overlay", NULL, window_flags)) {
+      ImGui::Text("ifps : %i ms", ifps_);
+    }
+    ImGui::End();
+
     ImGui::Render();
 
     // Render loop end
@@ -180,11 +221,11 @@ void MyWindow::update() {
 
     auto t2 = std::chrono::high_resolution_clock::now();
 
-    int ifps =
+    ifps_ =
         std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
     int target_ifps = (1.0f / framerate_) * 1000;
 
-    int diff_ifps = target_ifps - ifps;
+    int diff_ifps = target_ifps - ifps_;
 
     if (diff_ifps > 0) {
       std::this_thread::sleep_for(std::chrono::milliseconds(diff_ifps));

@@ -1,18 +1,19 @@
 #include "texture.h"
 
-GLuint Texture::create(GLenum texture_type, int width, int height,
+GLuint Texture::create(GLenum target, GLint internal_format, int width,
+                       int height, GLenum format, GLenum type,
                        const void* image) {
-  type_ = texture_type;
+  target_ = target;
   glGenTextures(1, &id_);
-  glBindTexture(type_, id_);
+  glBindTexture(target_, id_);
 
-  glTexImage2D(type_, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE,
+  glTexImage2D(target_, 0, internal_format, width, height, 0, format, type,
                image);
 
-  glTexParameteri(type_, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(type_, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  // glTexParameteri(type_, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  // glTexParameteri(type_, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(target_, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(target_, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  // glTexParameteri(target_, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  // glTexParameteri(target_, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
   // glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 
@@ -29,9 +30,9 @@ GLuint Texture::create(GLenum texture_type, int width, int height,
 // 	glUniform1i(texUni, unit);
 // }
 
-void Texture::bind() { glBindTexture(type_, id_); }
+void Texture::bind() { glBindTexture(target_, id_); }
 
-void Texture::unbind() { glBindTexture(type_, 0); }
+void Texture::unbind() { glBindTexture(target_, 0); }
 
 void Texture::clean() { glDeleteTextures(1, &id_); }
 

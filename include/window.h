@@ -33,6 +33,8 @@ class MyWindow {
   Camera camera_;
   Framebuffer framebuffer_;
   bool demo_ = false;
+  float fps_ = 0.0f;
+  int ifps_ = 0;
 
   void keyCallback(GLFWwindow* window, int key, int scancode, int action,
                    int mods);

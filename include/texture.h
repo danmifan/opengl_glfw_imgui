@@ -7,8 +7,8 @@
 
 class Texture {
  public:
-  GLuint create(GLenum texture_type, int width, int height,
-                const void* image = NULL);
+  GLuint create(GLenum target, GLint internal_format, int width, int height,
+                GLenum format, GLenum type, const void* image = NULL);
   void bind();
   void unbind();
   void clean();
@@ -16,7 +16,10 @@ class Texture {
 
  private:
   GLuint id_;
-  GLenum type_;
+  GLenum target_;
 };
 
 #endif  // TEXTURE_H
+
+//  glTexImage2D(type_, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE,
+//                image);

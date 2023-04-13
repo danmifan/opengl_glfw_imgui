@@ -14,14 +14,8 @@ void VAO::link(GLuint layout, GLuint num_components, GLenum type,
                GLsizeiptr stride, void* offset) {
   // vbo.bind();
   glBindBuffer(GL_ARRAY_BUFFER, vbo_id_);
-  // Position
-  glVertexAttribPointer(0, 3, type, GL_FALSE, 6 * stride, (void*)0);
-  glEnableVertexAttribArray(0);
-  // Color
-  glVertexAttribPointer(1, 3, type, GL_FALSE, 6 * stride,
-                        (void*)(3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-
+  glVertexAttribPointer(layout, num_components, type, GL_FALSE, stride, offset);
+  glEnableVertexAttribArray(layout);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   // vbo.unbind();
 }
@@ -34,3 +28,11 @@ void VAO::clean() {
   glDeleteBuffers(1, &vbo_id_);
   glDeleteVertexArrays(1, &vao_id_);
 }
+
+// // Position
+// glVertexAttribPointer(0, 3, type, GL_FALSE, 6 * stride, (void*)0);
+// glEnableVertexAttribArray(0);
+// // Color
+// glVertexAttribPointer(1, 3, type, GL_FALSE, 6 * stride,
+//                       (void*)(3 * sizeof(float)));
+// glEnableVertexAttribArray(1);

@@ -16,8 +16,8 @@ class Framebuffer {
 
  private:
   GLuint fbo_id_;
-  GLuint texture_id_;
-  Texture texture_;
+  Texture color_texture_;
+  Texture depth_texture_;
 };
 
 #endif  // FRAMEBUFFER_H
