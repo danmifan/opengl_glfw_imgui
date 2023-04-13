@@ -54,13 +54,6 @@ int MyWindow::init() {
   ImGui_ImplGlfw_InitForOpenGL(window_, true);
   ImGui_ImplOpenGL3_Init("#version 330");
 
-  // Vertices coordinates
-  // GLfloat vertices[] = {
-  //     -0.5f, -0.5f * float(sqrt(3)) / 3,    0.0f,  // Lower left corner
-  //     0.5f,  -0.5f * float(sqrt(3)) / 3,    0.0f,  // Lower right corner
-  //     0.0f,  0.5f * float(sqrt(3)) * 2 / 3, 0.0f   // Upper corner
-  // };
-
   GLfloat vertices[] = {-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
                         0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
                         0.0f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f};
