@@ -98,11 +98,11 @@ int MyWindow::init() {
 
   framebuffer_.create(800, 600);
 
-  vao_.create(vertices, sizeof(vertices));
-  vao_.bind();
-  vao_.link(0, 3, GL_FLOAT, 6 * sizeof(float), (void *)0);
-  vao_.link(1, 3, GL_FLOAT, 6 * sizeof(float), (void *)(3 * sizeof(float)));
-  vao_.unbind();
+  // vao_.create(vertices, sizeof(vertices));
+  // vao_.bind();
+  // vao_.link(0, 3, GL_FLOAT, 6 * sizeof(float), (void *)0);
+  // vao_.link(1, 3, GL_FLOAT, 6 * sizeof(float), (void *)(3 * sizeof(float)));
+  // vao_.unbind();
 
   camera_.create(800, 600, glm::vec3(0.0, 0.0, 2.0));
 
@@ -120,8 +120,26 @@ void MyWindow::update() {
         ->keyCallback(window, key, scancode, action, mods);
   });
 
+  glfwSetMouseButtonCallback(
+      window_, [](GLFWwindow *window, int button, int action, int mods) {
+        static_cast<MyWindow *>(glfwGetWindowUserPointer(window))
+            ->mouseCallback(window, button, action, mods);
+      });
+
+  glfwSetCursorPosCallback(
+      window_, [](GLFWwindow *window, double xpos, double ypos) {
+        static_cast<MyWindow *>(glfwGetWindowUserPointer(window))
+            ->cursorPosCallback(window, xpos, ypos);
+      });
+
+  mouse_moved_ = false;
+
   while (!glfwWindowShouldClose(window_)) {
     auto t1 = std::chrono::high_resolution_clock::now();
+
+    dx_ = 0.0;
+    dy_ = 0.0;
+    mouse_moved_ = false;
 
     glViewport(0, 0, 800, 600);
     framebuffer_.bind();
@@ -132,14 +150,27 @@ void MyWindow::update() {
     shader_.setUniform("size", size);
     // shader_.setUniform("color", color[0], color[1], color[2], color[3]);
 
-    glm::mat4 mat = camera_.matrix(45.0f, 0.1f, 100.0f);
-    shader_.setUniform("cam_matrix", glm::value_ptr(mat));
+    glm::mat4 view_proj = camera_.matrix(45.0f, 0.1f, 100.0f);
+    shader_.setUniform("view_projection", glm::value_ptr(view_proj));
 
     glm::vec3 pos = camera_.getPosition();
 
     // texture_.bind();
     vao_.bind();
-    glDrawArrays(GL_TRIANGLES, 0, sizeof(vertices));
+
+    static float angle = 0;
+    angle += 0.1 * ifps_s_;
+
+    for (int i = 0; i < 3; i++) {
+      glm::mat4 model = glm::mat4(1.0f);
+      model = glm::translate(model, glm::vec3(5 * i, 0, 0));
+
+      model = glm::rotate(model, angle, glm::vec3(0, 0, 1));
+
+      shader_.setUniform("model", glm::value_ptr(model));
+
+      glDrawArrays(GL_TRIANGLES, 0, sizeof(vertices));
+    }
     // vao_.unbind();
     // glDisableVertexAttribArray(0);
     // glDisableVertexAttribArray(1);
@@ -170,7 +201,6 @@ void MyWindow::update() {
       ImGui::ShowDemoWindow();
     }
 
-    // Opengl end
     // ImGuiWindowFlags window_flags =
     //     ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
     // const ImGuiViewport *viewport = ImGui::GetMainViewport();
@@ -194,7 +224,7 @@ void MyWindow::update() {
 
     ImGui::Begin("Test");
     ImGui::Text("x %f y %f z %f", pos.x, pos.y, pos.z);
-    ImGui::Image((void *)(intptr_t)framebuffer_.getTextureId(),
+    ImGui::Image((void *)(intptr_t)framebuffer_.getColorTextureId(),
                  ImVec2(800, 600), ImVec2(0, 1), ImVec2(1, 0));
 
     ImGui::End();
@@ -219,11 +249,15 @@ void MyWindow::update() {
 
     glfwPollEvents();
 
+    updateCamera();
+
     auto t2 = std::chrono::high_resolution_clock::now();
 
     ifps_ =
         std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
     int target_ifps = (1.0f / framerate_) * 1000;
+
+    ifps_s_ = ifps_ / 1000.0f;
 
     int diff_ifps = target_ifps - ifps_;
 
@@ -233,38 +267,72 @@ void MyWindow::update() {
   }
 }
 
-void MyWindow::keyCallback(GLFWwindow *window, int key, int scancode,
-                           int action, int mods) {
-  // if (action == GLFW_PRESS) {
-  switch (key) {
-    case GLFW_KEY_W:
-      camera_.forward();
+void MyWindow::keyCallback(GLFWwindow * /*window*/, int key, int /*scancode*/,
+                           int action, int /*mods*/) {
+  keys_[key] = action;
+}
+
+void MyWindow::updateCamera() {
+  if (keys_[GLFW_KEY_W]) {
+    camera_.forward();
+  }
+
+  if (keys_[GLFW_KEY_S]) {
+    camera_.backward();
+  }
+
+  if (keys_[GLFW_KEY_A]) {
+    camera_.left();
+  }
+
+  if (keys_[GLFW_KEY_D]) {
+    camera_.right();
+  }
+
+  if (keys_[GLFW_KEY_E]) {
+    camera_.up();
+  }
+
+  if (keys_[GLFW_KEY_Q]) {
+    camera_.down();
+  }
+
+  if (mouse_moved_ && right_click_) {
+    float yaw = dx_;
+    float pitch = dy_;
+    // camera_.rotateY(-yaw * ifps_s_);
+    camera_.rotate(-pitch, -yaw, 0);
+  }
+}
+
+void MyWindow::mouseCallback(GLFWwindow * /*window*/, int button, int action,
+                             int /*mods*/) {
+  switch (button) {
+    // Left click
+    case GLFW_MOUSE_BUTTON_1:
       break;
 
-    case GLFW_KEY_S:
-      camera_.backward();
-      break;
-
-    case GLFW_KEY_A:
-      camera_.left();
-      break;
-
-    case GLFW_KEY_D:
-      camera_.right();
-      break;
-
-    case GLFW_KEY_E:
-      camera_.up();
-      break;
-
-    case GLFW_KEY_Q:
-      camera_.down();
+    // Right click
+    case GLFW_MOUSE_BUTTON_2:
+      if (action == GLFW_PRESS) {
+        right_click_ = true;
+      } else if (action == GLFW_RELEASE) {
+        right_click_ = false;
+      }
       break;
 
     default:
       break;
   }
-  // }
+}
+
+void MyWindow::cursorPosCallback(GLFWwindow * /*window*/, double xpos,
+                                 double ypos) {
+  dx_ = xpos - mouse_x_;
+  dy_ = ypos - mouse_y_;
+  mouse_x_ = xpos;
+  mouse_y_ = ypos;
+  mouse_moved_ = true;
 }
 
 void MyWindow::shutdown() {

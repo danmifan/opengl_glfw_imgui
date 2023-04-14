@@ -7,6 +7,7 @@
 #include <glm/ext.hpp>
 
 #include <list>
+#include <map>
 
 #include "shader.h"
 #include "texture.h"
@@ -35,9 +36,20 @@ class MyWindow {
   bool demo_ = false;
   float fps_ = 0.0f;
   int ifps_ = 0;
+  float ifps_s_ = 0.0f;
+  bool right_click_ = false;
+  double mouse_x_ = 0.0;
+  double mouse_y_ = 0.0;
+  double dx_ = 0.0;
+  double dy_ = 0.0;
+  bool mouse_moved_ = false;
+  std::map<int, bool> keys_;
 
   void keyCallback(GLFWwindow* window, int key, int scancode, int action,
                    int mods);
+  void mouseCallback(GLFWwindow* window, int button, int action, int mods);
+  void cursorPosCallback(GLFWwindow* window, double xpos, double ypos);
+  void updateCamera();
 };
 
 #endif  // IMGUI_WINDOW_H

@@ -12,7 +12,8 @@ class Framebuffer {
   void bind();
   void unbind();
   void clean();
-  GLuint getTextureId();
+  GLuint getColorTextureId();
+  GLuint getDepthTextureId();
 
  private:
   GLuint fbo_id_;

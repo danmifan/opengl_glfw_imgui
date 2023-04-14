@@ -33,4 +33,6 @@ void Framebuffer::clean() {
   color_texture_.clean();
 }
 
-GLuint Framebuffer::getTextureId() { return color_texture_.getId(); }
+GLuint Framebuffer::getColorTextureId() { return color_texture_.getId(); }
+
+GLuint Framebuffer::getDepthTextureId() { return depth_texture_.getId(); }
