@@ -9,14 +9,19 @@ class Texture {
  public:
   GLuint create(GLenum target, GLint internal_format, int width, int height,
                 GLenum format, GLenum type, const void* image = NULL);
+  void loadFromImage(std::string path, std::string type_name);
   void bind();
   void unbind();
   void clean();
   GLuint getId();
+  std::string getPath();
+  std::string getTypeName();
 
  private:
   GLuint id_;
   GLenum target_;
+  std::string path_ = "";
+  std::string type_name_ = "";
 };
 
 #endif  // TEXTURE_H

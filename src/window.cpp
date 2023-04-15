@@ -10,8 +10,7 @@
 #include <streambuf>
 #include <thread>
 
-float color[4] = {0.8f, 0.3f, 0.02f, 1.0f};
-float size = 1.0f;
+#include <stb/stb_image.h>
 
 // clang-format off
   float vertices[] = {
@@ -117,16 +116,10 @@ int MyWindow::init() {
 
   framebuffer_.create(800, 600);
 
-  mesh_.create(vertices, sizeof(vertices));
-  for (int i = 0; i < 3; i++) {
-    entity_[i].create(&mesh_, &shader_);
-  }
+  // model_.load("models/tello/DJITelloWhiteVray2015SC.obj");
+  model_.load("models/cube/untitled.obj");
 
-  // vao_.create(vertices, sizeof(vertices));
-  // vao_.bind();
-  // vao_.link(0, 3, GL_FLOAT, 6 * sizeof(float), (void *)0);
-  // vao_.link(1, 3, GL_FLOAT, 6 * sizeof(float), (void *)(3 * sizeof(float)));
-  // vao_.unbind();
+  meshes_ = model_.getMeshes();
 
   camera_.create(800, 600, glm::vec3(0.0, 0.0, 2.0), 45.0f, 0.1f, 100.0f);
 
@@ -134,6 +127,7 @@ int MyWindow::init() {
 }
 
 void MyWindow::update() {
+  stbi_set_flip_vertically_on_load(true);
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
 
@@ -152,7 +146,6 @@ void MyWindow::update() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     shader_.activate();
-    // shader_.setUniform("color", color[0], color[1], color[2], color[3]);
 
     glm::mat4 view_proj = camera_.getViewProjMatrix();
     shader_.setUniform("view_projection", glm::value_ptr(view_proj));
@@ -163,14 +156,23 @@ void MyWindow::update() {
     static float angle = 0;
     angle += 10.0 * ifps_;
 
-    for (int i = 0; i < 3; i++) {
-      entity_[i].setPosition(glm::vec3(5 * i, 0, 0));
-      entity_[i].setRotation(glm::vec3(0.0f, angle, angle));
-      entity_[i].draw();
-      // glm::vec3 angles = entity_[i].getAngles();
-      // std::cout << angles.x << " " << angles.y << " " << angles.z <<
-      // std::endl;
-    }
+    glm::mat4 model = glm::mat4(1.0f);
+    shader_.setUniform("model", glm::value_ptr(model));
+
+    // for (int i = 0; i < meshes_.size(); i++) {
+    //   meshes_[i].draw(&shader_);
+    // }
+
+    meshes_[0].draw(&shader_);
+
+    // for (int i = 0; i < 3; i++) {
+    //   entity_[i].setPosition(glm::vec3(5 * i, 0, 0));
+    //   entity_[i].setRotation(glm::vec3(0.0f, angle, angle));
+    //   entity_[i].draw();
+    //   // glm::vec3 angles = entity_[i].getAngles();
+    //   // std::cout << angles.x << " " << angles.y << " " << angles.z <<
+    //   // std::endl;
+    // }
 
     // vao_.unbind();
     // glDisableVertexAttribArray(0);
@@ -317,7 +319,6 @@ void MyWindow::updateCamera() {
   if (mouse_moved_ && right_click_ && hovered_) {
     float yaw = dx_;
     float pitch = dy_;
-    // camera_.rotateY(-yaw * ifps_s_);
     camera_.rotate(-pitch, -yaw, 0);
   }
 }

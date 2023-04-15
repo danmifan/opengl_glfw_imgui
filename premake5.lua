@@ -51,7 +51,8 @@ project "window"
     "imgui",
     "glfw",
     "GL",
-    "GLEW"
+    "GLEW",
+    "assimp"
   }
 
   files {

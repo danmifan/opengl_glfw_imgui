@@ -2,20 +2,29 @@
 #define MESH_H
 
 #include <iostream>
+#include <vector>
 #include <GL/glew.h>
 #include <GL/gl.h>
-#include "vao.h"
+
+#include "vertex.h"
+#include "texture.h"
+#include "shader.h"
 
 class Mesh {
  public:
-  void create(GLfloat* vertices, GLsizeiptr size);
-  void draw();
-  void bind();
+  void create(std::vector<Vertex> vertices, std::vector<GLuint> indices,
+              std::vector<Texture> textures, std::string name = "");
+  void draw(Shader* shader);
+  std::string getName();
 
  private:
-  VAO vao_;
-  GLfloat* vertices_;
-  GLsizeiptr size_;
+  std::vector<Vertex> vertices_;
+  std::vector<GLuint> indices_;
+  std::vector<Texture> textures_;
+  std::string name_ = "";
+  GLuint vao_;
+  GLuint vbo_;
+  GLuint ebo_;
 };
 
 #endif  // MESH_H

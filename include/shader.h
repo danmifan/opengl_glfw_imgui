@@ -15,6 +15,7 @@ class Shader {
   void setUniform(std::string name, GLfloat x);
   void setUniform(std::string name, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
   void setUniform(std::string name, GLfloat* mat);
+  void setUniform(std::string name, GLint i);
 
  private:
   std::string loadShaderFile(std::string filename);

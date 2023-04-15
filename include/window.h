@@ -14,6 +14,7 @@
 #include "camera.h"
 #include "framebuffer.h"
 #include "entity.h"
+#include "model.h"
 
 class MyWindow {
  public:
@@ -29,9 +30,10 @@ class MyWindow {
   unsigned char* image_data_;
   int framerate_;
   Shader shader_;
-  // Texture texture_;
-  // VAO vao_;
+
+  Model model_;
   Mesh mesh_;
+  std::vector<Mesh> meshes_;
   Entity entity_[3];
   Camera camera_;
   Framebuffer framebuffer_;

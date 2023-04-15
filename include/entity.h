@@ -30,7 +30,6 @@ class Entity {
   glm::quat rotation_;
 
   Mesh* mesh_;
-  Entity* children_;
   Shader* shader_;
 
   void updateMatrix();

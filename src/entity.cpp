@@ -71,5 +71,5 @@ void Entity::updateMatrix() {
 
 void Entity::draw() {
   shader_->setUniform("model", glm::value_ptr(transform_));
-  mesh_->draw();
+  // mesh_->draw();
 }
