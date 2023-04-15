@@ -68,6 +68,25 @@ int MyWindow::init() {
 
   window_ = glfwCreateWindow(width_, height_, "Window", NULL, NULL);
 
+  glfwSetWindowUserPointer(window_, this);
+  glfwSetKeyCallback(window_, [](GLFWwindow *window, int key, int scancode,
+                                 int action, int mods) {
+    static_cast<MyWindow *>(glfwGetWindowUserPointer(window))
+        ->keyCallback(window, key, scancode, action, mods);
+  });
+
+  glfwSetMouseButtonCallback(
+      window_, [](GLFWwindow *window, int button, int action, int mods) {
+        static_cast<MyWindow *>(glfwGetWindowUserPointer(window))
+            ->mouseCallback(window, button, action, mods);
+      });
+
+  glfwSetCursorPosCallback(
+      window_, [](GLFWwindow *window, double xpos, double ypos) {
+        static_cast<MyWindow *>(glfwGetWindowUserPointer(window))
+            ->cursorPosCallback(window, xpos, ypos);
+      });
+
   if (!window_) {
     glfwTerminate();
     return -1;
@@ -98,13 +117,18 @@ int MyWindow::init() {
 
   framebuffer_.create(800, 600);
 
+  mesh_.create(vertices, sizeof(vertices));
+  for (int i = 0; i < 3; i++) {
+    entity_[i].create(&mesh_, &shader_);
+  }
+
   // vao_.create(vertices, sizeof(vertices));
   // vao_.bind();
   // vao_.link(0, 3, GL_FLOAT, 6 * sizeof(float), (void *)0);
   // vao_.link(1, 3, GL_FLOAT, 6 * sizeof(float), (void *)(3 * sizeof(float)));
   // vao_.unbind();
 
-  camera_.create(800, 600, glm::vec3(0.0, 0.0, 2.0));
+  camera_.create(800, 600, glm::vec3(0.0, 0.0, 2.0), 45.0f, 0.1f, 100.0f);
 
   return 1;
 }
@@ -112,25 +136,6 @@ int MyWindow::init() {
 void MyWindow::update() {
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
-
-  glfwSetWindowUserPointer(window_, this);
-  glfwSetKeyCallback(window_, [](GLFWwindow *window, int key, int scancode,
-                                 int action, int mods) {
-    static_cast<MyWindow *>(glfwGetWindowUserPointer(window))
-        ->keyCallback(window, key, scancode, action, mods);
-  });
-
-  glfwSetMouseButtonCallback(
-      window_, [](GLFWwindow *window, int button, int action, int mods) {
-        static_cast<MyWindow *>(glfwGetWindowUserPointer(window))
-            ->mouseCallback(window, button, action, mods);
-      });
-
-  glfwSetCursorPosCallback(
-      window_, [](GLFWwindow *window, double xpos, double ypos) {
-        static_cast<MyWindow *>(glfwGetWindowUserPointer(window))
-            ->cursorPosCallback(window, xpos, ypos);
-      });
 
   mouse_moved_ = false;
 
@@ -147,30 +152,26 @@ void MyWindow::update() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     shader_.activate();
-    shader_.setUniform("size", size);
     // shader_.setUniform("color", color[0], color[1], color[2], color[3]);
 
-    glm::mat4 view_proj = camera_.matrix(45.0f, 0.1f, 100.0f);
+    glm::mat4 view_proj = camera_.getViewProjMatrix();
     shader_.setUniform("view_projection", glm::value_ptr(view_proj));
 
-    glm::vec3 pos = camera_.getPosition();
-
     // texture_.bind();
-    vao_.bind();
+    // vao_.bind();
 
     static float angle = 0;
-    angle += 0.1 * ifps_s_;
+    angle += 10.0 * ifps_;
 
     for (int i = 0; i < 3; i++) {
-      glm::mat4 model = glm::mat4(1.0f);
-      model = glm::translate(model, glm::vec3(5 * i, 0, 0));
-
-      model = glm::rotate(model, angle, glm::vec3(0, 0, 1));
-
-      shader_.setUniform("model", glm::value_ptr(model));
-
-      glDrawArrays(GL_TRIANGLES, 0, sizeof(vertices));
+      entity_[i].setPosition(glm::vec3(5 * i, 0, 0));
+      entity_[i].setRotation(glm::vec3(0.0f, angle, angle));
+      entity_[i].draw();
+      // glm::vec3 angles = entity_[i].getAngles();
+      // std::cout << angles.x << " " << angles.y << " " << angles.z <<
+      // std::endl;
     }
+
     // vao_.unbind();
     // glDisableVertexAttribArray(0);
     // glDisableVertexAttribArray(1);
@@ -191,6 +192,7 @@ void MyWindow::update() {
     if (ImGui::BeginMainMenuBar()) {
       if (ImGui::BeginMenu("Menu")) {
         ImGui::MenuItem("Demo", NULL, &demo_);
+        ImGui::MenuItem("Metrics", NULL, &metrics_);
 
         ImGui::EndMenu();
       }
@@ -199,6 +201,10 @@ void MyWindow::update() {
 
     if (demo_) {
       ImGui::ShowDemoWindow();
+    }
+
+    if (metrics_) {
+      ImGui::ShowMetricsWindow();
     }
 
     // ImGuiWindowFlags window_flags =
@@ -222,10 +228,13 @@ void MyWindow::update() {
     // ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
     // ImGui::DockSpace(dockspace_id, ImVec2(0, 0));
 
-    ImGui::Begin("Test");
+    glm::vec3 pos = camera_.getPosition();
+
+    ImGui::Begin("Render");
     ImGui::Text("x %f y %f z %f", pos.x, pos.y, pos.z);
     ImGui::Image((void *)(intptr_t)framebuffer_.getColorTextureId(),
                  ImVec2(800, 600), ImVec2(0, 1), ImVec2(1, 0));
+    hovered_ = ImGui::IsItemHovered();
 
     ImGui::End();
 
@@ -235,7 +244,7 @@ void MyWindow::update() {
         ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
     ImGui::SetNextWindowBgAlpha(0.35f);  // Transparent background
     if (ImGui::Begin("Example: Simple overlay", NULL, window_flags)) {
-      ImGui::Text("ifps : %i ms", ifps_);
+      ImGui::Text("ifps : %f s", ifps_);
     }
     ImGui::End();
 
@@ -253,17 +262,25 @@ void MyWindow::update() {
 
     auto t2 = std::chrono::high_resolution_clock::now();
 
-    ifps_ =
+    float render_time_ms =
         std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
     int target_ifps = (1.0f / framerate_) * 1000;
 
-    ifps_s_ = ifps_ / 1000.0f;
-
-    int diff_ifps = target_ifps - ifps_;
+    int diff_ifps = target_ifps - render_time_ms;
+    // std::cout << render_time << std::endl;
+    // std::cout << diff_ifps << std::endl;
 
     if (diff_ifps > 0) {
       std::this_thread::sleep_for(std::chrono::milliseconds(diff_ifps));
     }
+
+    auto t3 = std::chrono::high_resolution_clock::now();
+
+    int total_time_ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t1).count();
+
+    ifps_ = total_time_ms / 1000.0f;
+    // std::cout << ifps_ << std::endl;
   }
 }
 
@@ -297,7 +314,7 @@ void MyWindow::updateCamera() {
     camera_.down();
   }
 
-  if (mouse_moved_ && right_click_) {
+  if (mouse_moved_ && right_click_ && hovered_) {
     float yaw = dx_;
     float pitch = dy_;
     // camera_.rotateY(-yaw * ifps_s_);
@@ -343,7 +360,7 @@ void MyWindow::shutdown() {
   glfwTerminate();
   ImGui::DestroyContext();
 
-  vao_.clean();
+  // vao_.clean();
   // texture_.clean();
   shader_.clean();
   framebuffer_.clean();

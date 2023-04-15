@@ -11,9 +11,9 @@
 
 #include "shader.h"
 #include "texture.h"
-#include "vao.h"
 #include "camera.h"
 #include "framebuffer.h"
+#include "entity.h"
 
 class MyWindow {
  public:
@@ -30,13 +30,16 @@ class MyWindow {
   int framerate_;
   Shader shader_;
   // Texture texture_;
-  VAO vao_;
+  // VAO vao_;
+  Mesh mesh_;
+  Entity entity_[3];
   Camera camera_;
   Framebuffer framebuffer_;
   bool demo_ = false;
+  bool metrics_ = false;
+  bool hovered_ = false;
   float fps_ = 0.0f;
-  int ifps_ = 0;
-  float ifps_s_ = 0.0f;
+  float ifps_ = 0;
   bool right_click_ = false;
   double mouse_x_ = 0.0;
   double mouse_y_ = 0.0;

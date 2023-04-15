@@ -10,8 +10,9 @@
 
 class Camera {
  public:
-  void create(int width, int height, glm::vec3 position);
-  glm::mat4 matrix(float fov, float near, float far);
+  void create(int width, int height, glm::vec3 position, float fov, float znear,
+              float zfar);
+  glm::mat4 getViewProjMatrix();
 
   void forward();
   void backward();
@@ -22,9 +23,9 @@ class Camera {
   // void rotateY(float angle);
   // void rotateX(float angle);
   void rotate(float x, float y, float z);
-  void move(glm::vec3 mvt);
 
   glm::vec3 getPosition();
+  // void setPosition(glm::vec3 position);
 
  private:
   int width_;
@@ -35,6 +36,9 @@ class Camera {
   glm::vec3 up_ = glm::vec3(0.0f, 1.0f, 0.0f);
   float speed_ = 0.1f;
   float sensitivity = 100.0f;
+  float fov_;
+  float znear_;
+  float zfar_;
 
   glm::mat4 transform_ = glm::mat4(1.0f);
 };

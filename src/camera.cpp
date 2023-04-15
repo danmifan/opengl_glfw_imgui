@@ -1,26 +1,27 @@
 #include "camera.h"
 
-void Camera::create(int width, int height, glm::vec3 position) {
+#include <iostream>
+#include <glm/gtc/matrix_access.hpp>
+#include <glm/gtx/string_cast.hpp>
+
+void Camera::create(int width, int height, glm::vec3 position, float fov,
+                    float znear, float zfar) {
   width_ = width;
   height_ = height;
   position_ = position;
+  fov_ = fov;
+  znear_ = znear;
+  zfar_ = zfar;
 }
 
-glm::mat4 Camera::matrix(float fov, float znear, float zfar) {
-  glm::mat4 model = glm::mat4(1.0f);
+glm::mat4 Camera::getViewProjMatrix() {
   glm::mat4 view = glm::mat4(1.0f);
   glm::mat4 proj = glm::mat4(1.0f);
 
-  // model =
-  //     glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f, 1.0f,
-  //     0.0f));
-
   view = glm::lookAt(position_, position_ + orientation_, up_);
 
-  proj =
-      glm::perspective(glm::radians(fov), (float)width_ / height_, znear, zfar);
-
-  // return proj * view * model;
+  proj = glm::perspective(glm::radians(fov_), (float)width_ / height_, znear_,
+                          zfar_);
 
   return proj * view;
 }
@@ -41,24 +42,11 @@ void Camera::up() { position_ += speed_ * up_; }
 
 void Camera::down() { position_ += speed_ * -up_; }
 
-void Camera::move(glm::vec3 mvt) {}
-
 glm::vec3 Camera::getPosition() { return position_; }
 
-// void Camera::rotateY(float angle) {
-//   glm::mat4 rotation = glm::mat4(1.0f);
-//   rotation =
-//       glm::rotate(rotation, glm::radians(angle), glm::vec3(0.0f, 1.0f,
-//       0.0f));
-//   glm::vec4 orientation = glm::vec4(start_orientation_, 0.0f);
-//   orientation_ = rotation * orientation;
-// }
-
-// void Camera::rotateX(float angle) {
-//   glm::mat4 rotation = glm::mat4(1.0f);
-//   rotation = glm::rotate(rotation, angle, glm::vec3(1.0f, 0.0f, 0.0f));
-//   glm::vec4 orientation = glm::vec4(orientation_, 1.0f);
-//   orientation_ = rotation * orientation;
+// void Camera::setPosition(glm::vec3 position) {
+//   transform_ = glm::translate(transform_, position);
+//   position_ = position;
 // }
 
 void Camera::rotate(float x, float y, float z) {
