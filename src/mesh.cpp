@@ -2,19 +2,24 @@
 
 void Mesh::create(std::vector<Vertex> vertices, std::vector<GLuint> indices,
                   std::vector<Texture> textures, std::string name) {
+  vertices_ = vertices;
+  indices_ = indices;
+  textures_ = textures;
+  name_ = name;
   glGenVertexArrays(1, &vao_);
+
   glGenBuffers(1, &vbo_);
   glGenBuffers(1, &ebo_);
 
   glBindVertexArray(vao_);
 
   glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex),
-               vertices.data(), GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(Vertex),
+               &vertices_[0], GL_STATIC_DRAW);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint),
-               indices_.data(), GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_.size() * sizeof(GLuint),
+               &indices_[0], GL_STATIC_DRAW);
 
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)0);
@@ -27,11 +32,6 @@ void Mesh::create(std::vector<Vertex> vertices, std::vector<GLuint> indices,
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
-
-  vertices_ = vertices;
-  indices_ = indices;
-  textures_ = textures;
-  name_ = name;
 }
 
 void Mesh::draw(Shader *shader) {
@@ -49,8 +49,8 @@ void Mesh::draw(Shader *shader) {
     if (name == "texture_diffuse") {
       number = std::to_string(diffuseNr++);
 
-      std::cout << name + number << std::endl;
-      std::cout << i << std::endl;
+      // std::cout << name + number << std::endl;
+      // std::cout << i << std::endl;
 
       shader->setUniform(name + number, (GLint)i);
 
@@ -58,17 +58,23 @@ void Mesh::draw(Shader *shader) {
     }
   }
 
-  std::cout << name_ << std::endl;
-  std::cout << vertices_.size() << std::endl;
-  std::cout << indices_.size() << std::endl;
+  // std::cout << name_ << std::endl;
+  // std::cout << vertices_.size() << std::endl;
+  // std::cout << indices_.size() << std::endl;
 
   // for (int i = 0; i < vertices_.size(); i++) {
   //   std::cout << vertices_[i].position.x << " " << vertices_[i].position.y
   //             << " " << vertices_[i].position.z << std::endl;
+  //   std::cout << vertices_[i].normal.x << " " << vertices_[i].normal.y << " "
+  //             << vertices_[i].normal.z << std::endl;
+  //   std::cout << vertices_[i].tex_coords.x << " " <<
+  //   vertices_[i].tex_coords.y
+  //             << std::endl;
   // }
 
   glBindVertexArray(vao_);
-  glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, 0);
+  glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices_.size()),
+                 GL_UNSIGNED_INT, 0);
   glBindVertexArray(0);
 
   glActiveTexture(GL_TEXTURE0);

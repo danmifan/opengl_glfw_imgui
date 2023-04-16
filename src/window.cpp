@@ -12,46 +12,6 @@
 
 #include <stb/stb_image.h>
 
-// clang-format off
-  float vertices[] = {
-        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-         0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 
-        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
-         0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
-         0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f,
-         0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-         0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-         0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-         0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
-         0.5f, -0.5f,  0.5f, 1.0f, 0.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-         0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
-         0.5f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f, 0.0f, 0.0f, 1.0f
-    };
-// clang-format on
 MyWindow::MyWindow(int width, int height, int framerate)
     : width_(width), height_(height), framerate_(framerate) {}
 
@@ -116,8 +76,8 @@ int MyWindow::init() {
 
   framebuffer_.create(800, 600);
 
-  // model_.load("models/tello/DJITelloWhiteVray2015SC.obj");
-  model_.load("models/cube/untitled.obj");
+  model_.load("models/tello/DJITelloWhiteVray2015SC.obj");
+  // model_.load("models/cube/cube.obj");
 
   meshes_ = model_.getMeshes();
 
@@ -142,7 +102,7 @@ void MyWindow::update() {
 
     glViewport(0, 0, 800, 600);
     framebuffer_.bind();
-    glClearColor(0, 0, 0, 1.00f);
+    glClearColor(0.7255, 0.68, 0.533, 1.00f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     shader_.activate();
@@ -150,20 +110,17 @@ void MyWindow::update() {
     glm::mat4 view_proj = camera_.getViewProjMatrix();
     shader_.setUniform("view_projection", glm::value_ptr(view_proj));
 
-    // texture_.bind();
-    // vao_.bind();
-
     static float angle = 0;
     angle += 10.0 * ifps_;
 
     glm::mat4 model = glm::mat4(1.0f);
     shader_.setUniform("model", glm::value_ptr(model));
 
-    // for (int i = 0; i < meshes_.size(); i++) {
-    //   meshes_[i].draw(&shader_);
-    // }
+    for (int i = 0; i < meshes_.size(); i++) {
+      meshes_[i].draw(&shader_);
+    }
 
-    meshes_[0].draw(&shader_);
+    // meshes_[0].draw(&shader_);
 
     // for (int i = 0; i < 3; i++) {
     //   entity_[i].setPosition(glm::vec3(5 * i, 0, 0));

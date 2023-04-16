@@ -57,6 +57,10 @@ void Texture::loadFromImage(std::string path, std::string type_name) {
                     GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+    std::cout << "Texture : " << path << " loaded" << std::endl;
+    std::cout << width << " " << height << " "
+              << " " << type_name << " " << nb_components << std::endl;
+
     stbi_image_free(data);
 
   } else {
@@ -78,7 +82,7 @@ void Texture::loadFromImage(std::string path, std::string type_name) {
 // 	glUniform1i(texUni, unit);
 // }
 
-void Texture::bind() { glBindTexture(target_, id_); }
+void Texture::bind() { glBindTexture(GL_TEXTURE_2D, id_); }
 
 void Texture::unbind() { glBindTexture(target_, 0); }
 
