@@ -3,6 +3,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include <ImGuizmo.h>
 
 #include <chrono>
 #include <fstream>
@@ -11,6 +12,8 @@
 #include <thread>
 
 #include <stb/stb_image.h>
+
+glm::mat4 model_matrix_ = glm::mat4(1.0f);
 
 MyWindow::MyWindow(int width, int height, int framerate)
     : width_(width), height_(height), framerate_(framerate) {}
@@ -66,6 +69,7 @@ int MyWindow::init() {
   ImGuiIO &io = ImGui::GetIO();
   (void)io;
   // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;  // Enable Docking
+  io.ConfigWindowsMoveFromTitleBarOnly = true;
 
   ImGui::StyleColorsDark();
 
@@ -81,6 +85,11 @@ int MyWindow::init() {
 
   meshes_ = model_.getMeshes();
 
+  et1.create(0, &meshes_[0], &shader_);
+  et2.create(1, &meshes_[1], &shader_);
+
+  et1.addChild(&et2);
+
   camera_.create(800, 600, glm::vec3(0.0, 0.0, 2.0), 45.0f, 0.1f, 100.0f);
 
   return 1;
@@ -90,6 +99,8 @@ void MyWindow::update() {
   stbi_set_flip_vertically_on_load(true);
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
+
+  ImGuizmo::SetOrthographic(false);
 
   mouse_moved_ = false;
 
@@ -113,14 +124,17 @@ void MyWindow::update() {
     static float angle = 0;
     angle += 10.0 * ifps_;
 
-    glm::mat4 model = glm::mat4(1.0f);
-    shader_.setUniform("model", glm::value_ptr(model));
+    // shader_.setUniform("model", glm::value_ptr(model_matrix_));
 
-    for (int i = 0; i < meshes_.size(); i++) {
-      meshes_[i].draw(&shader_);
-    }
+    et1.setTransform(model_matrix_);
+    // et2.setTransform(model_matrix_);
 
-    // meshes_[0].draw(&shader_);
+    // for (int i = 0; i < meshes_.size(); i++) {
+    //   meshes_[i].draw(&shader_);
+    // }
+
+    et1.draw();
+    et2.draw();
 
     // for (int i = 0; i < 3; i++) {
     //   entity_[i].setPosition(glm::vec3(5 * i, 0, 0));
@@ -147,6 +161,7 @@ void MyWindow::update() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+    ImGuizmo::BeginFrame();
 
     if (ImGui::BeginMainMenuBar()) {
       if (ImGui::BeginMenu("Menu")) {
@@ -194,6 +209,31 @@ void MyWindow::update() {
     ImGui::Image((void *)(intptr_t)framebuffer_.getColorTextureId(),
                  ImVec2(800, 600), ImVec2(0, 1), ImVec2(1, 0));
     hovered_ = ImGui::IsItemHovered();
+
+    ImGuizmo::SetDrawlist();
+
+    ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y,
+                      ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+
+    ImGuizmo::Manipulate(glm::value_ptr(camera_.getViewMatrix()),
+                         glm::value_ptr(camera_.getProjMatrix()),
+                         ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::WORLD,
+                         glm::value_ptr(model_matrix_));
+
+    // ImGuizmo::Manipulate(glm::value_ptr(camera_.getViewMatrix()),
+    //                      glm::value_ptr(camera_.getProjMatrix()),
+    //                      ImGuizmo::OPERATION::ROTATE_Y, ImGuizmo::WORLD,
+    //                      glm::value_ptr(model_matrix_));
+
+    // ImGuizmo::Manipulate(glm::value_ptr(camera_.getViewMatrix()),
+    //                      glm::value_ptr(camera_.getProjMatrix()),
+    //                      ImGuizmo::OPERATION::ROTATE_X, ImGuizmo::LOCAL,
+    //                      glm::value_ptr(model_matrix_));
+
+    // ImGuizmo::Manipulate(glm::value_ptr(camera_.getViewMatrix()),
+    //                      glm::value_ptr(camera_.getProjMatrix()),
+    //                      ImGuizmo::OPERATION::ROTATE_Z, ImGuizmo::LOCAL,
+    //                      glm::value_ptr(model_matrix_));
 
     ImGui::End();
 

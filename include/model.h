@@ -2,8 +2,7 @@
 #define MODEL_H
 
 #include <iostream>
-#include "mesh.h"
-#include "texture.h"
+#include "entity.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -15,7 +14,7 @@ class Model {
   std::vector<Mesh> getMeshes();
 
  private:
-  void processNode(aiNode* node, const aiScene* scene);
+  void processNode(aiNode* node, const aiScene* scene, Entity* entity);
   Mesh processMesh(aiMesh* mesh, const aiScene* scene);
   std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type,
                                             std::string type_name);
@@ -23,6 +22,7 @@ class Model {
   std::vector<Mesh> meshes_;
   std::vector<Texture> textures_;
   std::string path_;
+  // Entity* root_entity_;
 };
 
 #endif  // MODEL_H

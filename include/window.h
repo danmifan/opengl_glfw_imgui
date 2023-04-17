@@ -34,7 +34,7 @@ class MyWindow {
   Model model_;
   Mesh mesh_;
   std::vector<Mesh> meshes_;
-  Entity entity_[3];
+  Entity et1, et2;
   Camera camera_;
   Framebuffer framebuffer_;
   bool demo_ = false;

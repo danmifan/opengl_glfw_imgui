@@ -5,9 +5,12 @@
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtx/euler_angles.hpp>
 
-void Entity::create(Mesh* mesh, Shader* shader) {
+#include <algorithm>
+
+void Entity::create(unsigned int id, Mesh* mesh, Shader* shader) {
   mesh_ = mesh;
   shader_ = shader;
+  id_ = id;
 }
 
 void Entity::setPosition(glm::vec3 position) {
@@ -52,11 +55,20 @@ glm::vec3 Entity::getScale() { return scale_; }
 
 void Entity::setTransform(glm::mat4 transform) {
   // A tester
-  transform_ = transform;
-  glm::quat rotation;
-  glm::vec3 skew;
-  glm::vec4 perspective;
-  glm::decompose(transform_, scale_, rotation, position_, skew, perspective);
+  transform_ = parent_transform_ * transform;
+  // glm::quat rotation;
+  // glm::vec3 skew;
+  // glm::vec4 perspective;
+  // glm::decompose(transform_, scale_, rotation, position_, skew, perspective);
+
+  for (const auto& child : children_) {
+    child->setParentTransform(transform_);
+    child->updateMatrix();
+  }
+}
+
+void Entity::setParentTransform(glm::mat4 parent_transform) {
+  parent_transform_ = parent_transform;
 }
 
 glm::mat4 Entity::getTransform() { return transform_; }
@@ -66,10 +78,35 @@ void Entity::updateMatrix() {
   glm::mat4 t = glm::translate(mat, position_);
   glm::mat4 r = glm::mat4_cast(rotation_);
   glm::mat4 s = glm::scale(mat, scale_);
-  transform_ = t * r * s;
+  transform_ = parent_transform_ * t * r * s;
+
+  for (const auto& child : children_) {
+    child->setParentTransform(transform_);
+    child->updateMatrix();
+  }
 }
 
 void Entity::draw() {
   shader_->setUniform("model", glm::value_ptr(transform_));
-  // mesh_->draw();
+  mesh_->draw(shader_);
 }
+
+void Entity::addChild(Entity* entity) {
+  auto it = std::find_if(children_.begin(), children_.end(),
+                         [&](Entity* e) { return entity->getID() == e->id_; });
+
+  if (it == children_.end()) {
+    children_.push_back(entity);
+  } else {
+    std::cout << "Error : entity " << entity->getID()
+              << " is already a children of entity : " << id_;
+  }
+}
+
+void Entity::removeChild() {
+  // auto it = std::find_if(children_.begin(), children_.end(),
+  //                        [&](Entity* e) { return entity->getID() == e->id_;
+  //                        });
+}
+
+unsigned int Entity::getID() { return id_; }

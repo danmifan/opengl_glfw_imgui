@@ -15,20 +15,27 @@ void Model::load(std::string path) {
 
   std::cout << "Importing model " << path << std::endl;
 
-  processNode(scene->mRootNode, scene);
+  // root_entity_ = new Entity();
+
+  processNode(scene->mRootNode, scene, NULL);
 
   std::cout << "Model imported" << std::endl;
 }
 
-void Model::processNode(aiNode* node, const aiScene* scene) {
-  // process all the node's meshes (if any)
+void Model::processNode(aiNode* node, const aiScene* scene, Entity* entity) {
+  std::cout << "Nb : " << node->mNumMeshes << " " << node->mNumChildren << " "
+            << std::string(node->mName.C_Str()) << std::endl;
+
   for (unsigned int i = 0; i < node->mNumMeshes; i++) {
     aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+    Mesh my_mesh = processMesh(mesh, scene);
     meshes_.push_back(processMesh(mesh, scene));
   }
-  // then do the same for each of its children
+
   for (unsigned int i = 0; i < node->mNumChildren; i++) {
-    processNode(node->mChildren[i], scene);
+    // Entity* child = new Entity();
+
+    processNode(node->mChildren[i], scene, NULL);
   }
 }
 

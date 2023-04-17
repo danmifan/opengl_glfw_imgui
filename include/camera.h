@@ -13,6 +13,8 @@ class Camera {
   void create(int width, int height, glm::vec3 position, float fov, float znear,
               float zfar);
   glm::mat4 getViewProjMatrix();
+  glm::mat4 getViewMatrix();
+  glm::mat4 getProjMatrix();
 
   void forward();
   void backward();

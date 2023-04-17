@@ -26,6 +26,15 @@ glm::mat4 Camera::getViewProjMatrix() {
   return proj * view;
 }
 
+glm::mat4 Camera::getViewMatrix() {
+  return glm::lookAt(position_, position_ + orientation_, up_);
+}
+
+glm::mat4 Camera::getProjMatrix() {
+  return glm::perspective(glm::radians(fov_), (float)width_ / height_, znear_,
+                          zfar_);
+}
+
 void Camera::forward() { position_ += speed_ * orientation_; }
 
 void Camera::backward() { position_ += speed_ * -orientation_; }

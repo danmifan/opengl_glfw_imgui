@@ -18,7 +18,8 @@ project "imgui"
   targetdir "lib/"
 
   includedirs {
-    "thirdparty/imgui"
+    "thirdparty/imgui",
+    "thirdparty/ImGuizmo"
   }
 
   links {
@@ -29,6 +30,7 @@ project "imgui"
     "thirdparty/imgui/*.cpp",
     "thirdparty/imgui/backends/imgui_impl_glfw.cpp",
     "thirdparty/imgui/backends/imgui_impl_opengl3.cpp",
+    "thirdparty/ImGuizmo/ImGuizmo.cpp"
   }
 
 
@@ -40,7 +42,8 @@ project "window"
   includedirs {
     "include",
     "thirdparty/imgui",
-    "thirdparty/imgui/backends"
+    "thirdparty/imgui/backends",
+    "thirdparty/ImGuizmo"
   }
 
   libdirs {
