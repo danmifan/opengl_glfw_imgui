@@ -46,6 +46,8 @@ void Mesh::draw(Shader *shader) {
     std::string number;
     std::string name = textures_[i].getTypeName();
 
+    std::cout << name << std::endl;
+
     if (name == "texture_diffuse") {
       number = std::to_string(diffuseNr++);
 
@@ -55,6 +57,8 @@ void Mesh::draw(Shader *shader) {
       shader->setUniform(name + number, (GLint)i);
 
       textures_[i].bind();
+
+      std::cout << glGetError() << std::endl;
     }
   }
 

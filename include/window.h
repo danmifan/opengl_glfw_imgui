@@ -15,6 +15,7 @@
 #include "framebuffer.h"
 #include "entity.h"
 #include "model.h"
+#include "scene.h"
 
 class MyWindow {
  public:
@@ -32,11 +33,16 @@ class MyWindow {
   Shader shader_;
 
   Model model_;
-  Mesh mesh_;
-  std::vector<Mesh> meshes_;
-  Entity et1, et2;
+  Model model2_;
+  glm::mat4 model_matrix_ = glm::mat4(1.0f);
+  Scene scene_;
   Camera camera_;
   Framebuffer framebuffer_;
+
+  Mesh grid_mesh_;
+  Texture grid_texture_;
+  Entity grid_entity_;
+
   bool demo_ = false;
   bool metrics_ = false;
   bool hovered_ = false;
@@ -54,6 +60,7 @@ class MyWindow {
                    int mods);
   void mouseCallback(GLFWwindow* window, int button, int action, int mods);
   void cursorPosCallback(GLFWwindow* window, double xpos, double ypos);
+  void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
   void updateCamera();
 };
 

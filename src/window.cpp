@@ -1,5 +1,7 @@
 #include "window.h"
 
+#include <glm/gtx/string_cast.hpp>
+
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
@@ -12,8 +14,6 @@
 #include <thread>
 
 #include <stb/stb_image.h>
-
-glm::mat4 model_matrix_ = glm::mat4(1.0f);
 
 MyWindow::MyWindow(int width, int height, int framerate)
     : width_(width), height_(height), framerate_(framerate) {}
@@ -49,6 +49,12 @@ int MyWindow::init() {
             ->cursorPosCallback(window, xpos, ypos);
       });
 
+  glfwSetScrollCallback(
+      window_, [](GLFWwindow *window, double xoffset, double yoffset) {
+        static_cast<MyWindow *>(glfwGetWindowUserPointer(window))
+            ->scrollCallback(window, xoffset, yoffset);
+      });
+
   if (!window_) {
     glfwTerminate();
     return -1;
@@ -80,17 +86,85 @@ int MyWindow::init() {
 
   framebuffer_.create(800, 600);
 
-  model_.load("models/tello/DJITelloWhiteVray2015SC.obj");
-  // model_.load("models/cube/cube.obj");
+  model_.load("models/tello/obj/DJITelloWhiteVray2015SC.obj");
+  model2_.load("models/cube/cube.obj");
 
-  meshes_ = model_.getMeshes();
+  // meshes_ = model_.getMeshes();
+  Entity *root = model_.getEntity();
+  root->setScale(glm::vec3(0.01, 0.01, 0.01));
+  model_matrix_ = root->getTransform();
 
-  et1.create(0, &meshes_[0], &shader_);
-  et2.create(1, &meshes_[1], &shader_);
-
-  et1.addChild(&et2);
+  scene_.addEntity(root);
+  // scene_.addEntity(model2_.getEntity());
 
   camera_.create(800, 600, glm::vec3(0.0, 0.0, 2.0), 45.0f, 0.1f, 100.0f);
+
+  // GRID
+  grid_texture_.loadFromImage("models/grid.png", "texture_diffuse");
+  std::vector<Vertex> grid_vertices;
+  std::vector<GLuint> grid_indices;
+  std::vector<Texture> grid_texture;
+  grid_texture.push_back(grid_texture_);
+
+  int width = 6;
+  int height = 6;
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      Vertex v1, v2, v3, v4, v5, v6;
+      GLuint i1, i2, i3;
+      int v = y * width + x;
+      i1 = v;
+      i2 = v + 1;
+      i3 = v + width + 1;
+
+      // std::cout << i1 << " " << i2 << " " << i3 << std::endl;
+
+      int test_x = x - width / 2;
+      int test_y = y - height / 2;
+      v1.position = {test_x, test_y, 0};
+      v2.position = {test_x + 1, test_y, 0};
+      v3.position = {test_x, test_y + 1, 0};
+      v1.normal = {0, 0, 1};
+      v2.normal = {0, 0, 1};
+      v3.normal = {0, 0, 1};
+      v1.tex_coords = {0, 0};
+      v2.tex_coords = {1, 0};
+      v3.tex_coords = {1, 1};
+
+      GLuint i4, i5, i6;
+      i4 = v + 1;
+      i5 = v + width + 2;
+      i6 = v + width + 1;
+
+      // std::cout << i4 << " " << i5 << " " << i6 << std::endl;
+
+      v4.position = {test_x + 1, test_y, 0};
+      v5.position = {test_x + 1, test_y + 1, 0};
+      v6.position = {test_x, test_y + 1, 0};
+      v4.normal = {0, 0, 1};
+      v5.normal = {0, 0, 1};
+      v6.normal = {0, 0, 1};
+      v4.tex_coords = {1, 0};
+      v5.tex_coords = {1, 1};
+      v6.tex_coords = {0, 1};
+
+      grid_vertices.push_back(v1);
+      grid_vertices.push_back(v2);
+      grid_vertices.push_back(v3);
+      grid_vertices.push_back(v4);
+      grid_vertices.push_back(v5);
+      grid_vertices.push_back(v6);
+      grid_indices.push_back(i1);
+      grid_indices.push_back(i2);
+      grid_indices.push_back(i3);
+      grid_indices.push_back(i4);
+      grid_indices.push_back(i5);
+      grid_indices.push_back(i6);
+    }
+  }
+
+  grid_mesh_.create(grid_vertices, grid_indices, grid_texture);
+  grid_entity_.create(&grid_mesh_);
 
   return 1;
 }
@@ -124,25 +198,14 @@ void MyWindow::update() {
     static float angle = 0;
     angle += 10.0 * ifps_;
 
-    // shader_.setUniform("model", glm::value_ptr(model_matrix_));
+    grid_entity_.draw(&shader_);
 
-    et1.setTransform(model_matrix_);
-    // et2.setTransform(model_matrix_);
-
-    // for (int i = 0; i < meshes_.size(); i++) {
-    //   meshes_[i].draw(&shader_);
-    // }
-
-    et1.draw();
-    et2.draw();
-
-    // for (int i = 0; i < 3; i++) {
-    //   entity_[i].setPosition(glm::vec3(5 * i, 0, 0));
-    //   entity_[i].setRotation(glm::vec3(0.0f, angle, angle));
-    //   entity_[i].draw();
-    //   // glm::vec3 angles = entity_[i].getAngles();
-    //   // std::cout << angles.x << " " << angles.y << " " << angles.z <<
-    //   // std::endl;
+    // root_->setTransform(model_matrix_);
+    // for (const auto &root : scene_.getEntities()) {
+    //   root->setTransform(model_matrix_);
+    //   for (const auto &child : root->getChildren()) {
+    //     child->draw(&shader_);
+    //   }
     // }
 
     // vao_.unbind();
@@ -245,6 +308,25 @@ void MyWindow::update() {
     if (ImGui::Begin("Example: Simple overlay", NULL, window_flags)) {
       ImGui::Text("ifps : %f s", ifps_);
     }
+    ImGui::End();
+
+    // Scene graph
+    ImGui::Begin("Scene");
+
+    for (const auto &root : scene_.getEntities()) {
+      if (ImGui::TreeNode(root->getName().c_str())) {
+        for (const auto &child : root->getChildren()) {
+          if (child->getChildren().size() == 0) {
+            ImGui::Text("%s", child->getName().c_str());
+          }
+          // if (ImGui::TreeNode(child->getName().c_str())) {
+          //   ImGui::TreePop();
+          // }
+        }
+        ImGui::TreePop();
+      }
+    }
+
     ImGui::End();
 
     ImGui::Render();
@@ -362,4 +444,15 @@ void MyWindow::shutdown() {
   // texture_.clean();
   shader_.clean();
   framebuffer_.clean();
+}
+
+void MyWindow::scrollCallback(GLFWwindow * /*window*/, double /*xoffset*/,
+                              double yoffset) {
+  if (yoffset > 0) {
+    camera_.forward();
+  }
+
+  if (yoffset < 0) {
+    camera_.backward();
+  }
 }

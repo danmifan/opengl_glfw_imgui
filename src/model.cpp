@@ -15,9 +15,10 @@ void Model::load(std::string path) {
 
   std::cout << "Importing model " << path << std::endl;
 
-  // root_entity_ = new Entity();
+  root_entity_ = new Entity();
+  root_entity_->setName(std::string(scene->mRootNode->mName.C_Str()));
 
-  processNode(scene->mRootNode, scene, NULL);
+  processNode(scene->mRootNode, scene, root_entity_);
 
   std::cout << "Model imported" << std::endl;
 }
@@ -28,18 +29,20 @@ void Model::processNode(aiNode* node, const aiScene* scene, Entity* entity) {
 
   for (unsigned int i = 0; i < node->mNumMeshes; i++) {
     aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-    Mesh my_mesh = processMesh(mesh, scene);
-    meshes_.push_back(processMesh(mesh, scene));
+    Mesh* my_mesh = processMesh(mesh, scene);
+    Entity* child = new Entity();
+    child->create(my_mesh);
+    child->setName(std::string(mesh->mName.C_Str()));
+    entity->addChild(child);
+    // meshes_.push_back(processMesh(mesh, scene));
   }
 
   for (unsigned int i = 0; i < node->mNumChildren; i++) {
-    // Entity* child = new Entity();
-
-    processNode(node->mChildren[i], scene, NULL);
+    processNode(node->mChildren[i], scene, entity);
   }
 }
 
-Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
+Mesh* Model::processMesh(aiMesh* mesh, const aiScene* scene) {
   std::vector<Vertex> vertices;
   std::vector<unsigned int> indices;
   std::vector<Texture> textures;
@@ -92,8 +95,8 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
 
   std::string name = std::string(mesh->mName.C_Str());
 
-  Mesh my_mesh;
-  my_mesh.create(vertices, indices, textures, name);
+  Mesh* my_mesh = new Mesh();
+  my_mesh->create(vertices, indices, textures, name);
   return my_mesh;
 }
 
@@ -128,3 +131,5 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat,
 }
 
 std::vector<Mesh> Model::getMeshes() { return meshes_; }
+
+Entity* Model::getEntity() { return root_entity_; }

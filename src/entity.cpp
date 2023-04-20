@@ -7,11 +7,14 @@
 
 #include <algorithm>
 
-void Entity::create(unsigned int id, Mesh* mesh, Shader* shader) {
-  mesh_ = mesh;
-  shader_ = shader;
-  id_ = id;
+#include "id.h"
+
+Entity::Entity() {
+  id_ = global_id;
+  global_id++;
 }
+
+void Entity::create(Mesh* mesh) { mesh_ = mesh; }
 
 void Entity::setPosition(glm::vec3 position) {
   position_ = position;
@@ -55,14 +58,14 @@ glm::vec3 Entity::getScale() { return scale_; }
 
 void Entity::setTransform(glm::mat4 transform) {
   // A tester
-  transform_ = parent_transform_ * transform;
+  world_transform_ = parent_transform_ * transform;
   // glm::quat rotation;
   // glm::vec3 skew;
   // glm::vec4 perspective;
   // glm::decompose(transform_, scale_, rotation, position_, skew, perspective);
 
   for (const auto& child : children_) {
-    child->setParentTransform(transform_);
+    child->setParentTransform(world_transform_);
     child->updateMatrix();
   }
 }
@@ -71,24 +74,30 @@ void Entity::setParentTransform(glm::mat4 parent_transform) {
   parent_transform_ = parent_transform;
 }
 
-glm::mat4 Entity::getTransform() { return transform_; }
+glm::mat4 Entity::getTransform() { return world_transform_; }
+
+void Entity::setMesh(Mesh* mesh) { mesh_ = mesh; }
 
 void Entity::updateMatrix() {
   glm::mat4 mat = glm::mat4(1.0f);
   glm::mat4 t = glm::translate(mat, position_);
   glm::mat4 r = glm::mat4_cast(rotation_);
   glm::mat4 s = glm::scale(mat, scale_);
-  transform_ = parent_transform_ * t * r * s;
+  local_transform_ = t * r * s;
+  world_transform_ = parent_transform_ * local_transform_;
 
   for (const auto& child : children_) {
-    child->setParentTransform(transform_);
+    child->setParentTransform(world_transform_);
     child->updateMatrix();
   }
 }
 
-void Entity::draw() {
-  shader_->setUniform("model", glm::value_ptr(transform_));
-  mesh_->draw(shader_);
+void Entity::draw(Shader* shader) {
+  // shader_->setUniform("model", glm::value_ptr(transform_));
+  // mesh_->draw(shader_);
+
+  shader->setUniform("model", glm::value_ptr(world_transform_));
+  mesh_->draw(shader);
 }
 
 void Entity::addChild(Entity* entity) {
@@ -109,4 +118,10 @@ void Entity::removeChild() {
   //                        });
 }
 
+std::vector<Entity*> Entity::getChildren() { return children_; }
+
 unsigned int Entity::getID() { return id_; }
+
+void Entity::setName(std::string name) { name_ = name; }
+
+std::string Entity::getName() { return name_; }
