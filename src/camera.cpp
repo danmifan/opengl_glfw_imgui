@@ -51,6 +51,8 @@ void Camera::up() { position_ += speed_ * up_; }
 
 void Camera::down() { position_ += speed_ * -up_; }
 
+void Camera::setPosition(glm::vec3 position) { position_ = position; }
+
 glm::vec3 Camera::getPosition() { return position_; }
 
 // void Camera::setPosition(glm::vec3 position) {

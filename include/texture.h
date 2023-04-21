@@ -10,6 +10,7 @@ class Texture {
   GLuint create(GLenum target, GLint internal_format, int width, int height,
                 GLenum format, GLenum type, const void* image = NULL);
   void loadFromImage(std::string path, std::string type_name);
+  void loadDDSFile(std::string path, std::string type_name);
   void bind();
   void unbind();
   void clean();

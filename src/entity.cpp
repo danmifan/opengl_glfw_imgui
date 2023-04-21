@@ -57,12 +57,13 @@ void Entity::setScale(glm::vec3 scale) {
 glm::vec3 Entity::getScale() { return scale_; }
 
 void Entity::setTransform(glm::mat4 transform) {
-  // A tester
-  world_transform_ = parent_transform_ * transform;
+  local_transform_ = transform;
+  world_transform_ = parent_transform_ * local_transform_;
   // glm::quat rotation;
-  // glm::vec3 skew;
-  // glm::vec4 perspective;
-  // glm::decompose(transform_, scale_, rotation, position_, skew, perspective);
+  glm::vec3 skew;
+  glm::vec4 perspective;
+  glm::decompose(local_transform_, scale_, rotation_, position_, skew,
+                 perspective);
 
   for (const auto& child : children_) {
     child->setParentTransform(world_transform_);
@@ -74,7 +75,13 @@ void Entity::setParentTransform(glm::mat4 parent_transform) {
   parent_transform_ = parent_transform;
 }
 
-glm::mat4 Entity::getTransform() { return world_transform_; }
+glm::mat4 Entity::getTransform() { return local_transform_; }
+
+glm::mat4 Entity::getWorldTransform() { return world_transform_; }
+
+glm::mat4 Entity::getParentTransform() { return parent_transform_; }
+
+float* Entity::getTransformPtr() { return glm::value_ptr(local_transform_); }
 
 void Entity::setMesh(Mesh* mesh) { mesh_ = mesh; }
 
@@ -93,11 +100,10 @@ void Entity::updateMatrix() {
 }
 
 void Entity::draw(Shader* shader) {
-  // shader_->setUniform("model", glm::value_ptr(transform_));
-  // mesh_->draw(shader_);
-
-  shader->setUniform("model", glm::value_ptr(world_transform_));
-  mesh_->draw(shader);
+  if (mesh_) {
+    shader->setUniform("model", glm::value_ptr(world_transform_));
+    mesh_->draw(shader);
+  }
 }
 
 void Entity::addChild(Entity* entity) {

@@ -28,20 +28,15 @@ class MyWindow {
   GLFWwindow* window_;
   int width_;
   int height_;
-  unsigned char* image_data_;
   int framerate_;
-  Shader shader_;
 
+  Shader shader_;
   Model model_;
   Model model2_;
   glm::mat4 model_matrix_ = glm::mat4(1.0f);
   Scene scene_;
   Camera camera_;
   Framebuffer framebuffer_;
-
-  Mesh grid_mesh_;
-  Texture grid_texture_;
-  Entity grid_entity_;
 
   bool demo_ = false;
   bool metrics_ = false;
@@ -55,6 +50,10 @@ class MyWindow {
   double dy_ = 0.0;
   bool mouse_moved_ = false;
   std::map<int, bool> keys_;
+  bool wireframe_ = false;
+
+  int scene_width_ = 800;
+  int scene_height_ = 600;
 
   void keyCallback(GLFWwindow* window, int key, int scancode, int action,
                    int mods);
@@ -62,6 +61,13 @@ class MyWindow {
   void cursorPosCallback(GLFWwindow* window, double xpos, double ypos);
   void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
   void updateCamera();
+  Mesh* createGrid(int width, int height);
+  void showEntities(const std::vector<Entity*>& entities);
+
+  unsigned int selected_id_ = -1;
+  Entity* selected_entity_ = nullptr;
+  glm::vec4 bg_color_ = {0.48904, 0.690881, 0.776892, 1.0f};
+  float color_[4];
 };
 
 #endif  // IMGUI_WINDOW_H

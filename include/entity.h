@@ -22,6 +22,9 @@ class Entity {
   void setTransform(glm::mat4 transform);
   void setParentTransform(glm::mat4 parent_transform);
   glm::mat4 getTransform();
+  glm::mat4 getWorldTransform();
+  glm::mat4 getParentTransform();
+  float* getTransformPtr();
   void setMesh(Mesh* mesh);
   void draw(Shader* shader);
 
@@ -43,11 +46,11 @@ class Entity {
   glm::vec3 scale_ = glm::vec3(1.0f, 1.0f, 1.0f);
   glm::quat rotation_ = glm::quat(glm::vec3(0, 0, 0));
 
-  Mesh* mesh_;
-  Shader* shader_;
+  Mesh* mesh_ = nullptr;
+  Shader* shader_ = nullptr;
   std::vector<Entity*> children_;
   unsigned int id_;
-  std::string name_;
+  std::string name_ = "default";
 
   void updateMatrix();
 };

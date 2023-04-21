@@ -26,6 +26,7 @@ class Camera {
   // void rotateX(float angle);
   void rotate(float x, float y, float z);
 
+  void setPosition(glm::vec3);
   glm::vec3 getPosition();
   // void setPosition(glm::vec3 position);
 

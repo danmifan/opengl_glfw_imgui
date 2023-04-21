@@ -122,7 +122,11 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat,
     }
     if (!skip) {  // if texture hasn't been loaded already, load it
       Texture texture;
-      texture.loadFromImage(str, type_name);
+      if (str.find(".dds") != std::string::npos) {
+        texture.loadDDSFile(str, type_name);
+      } else {
+        texture.loadFromImage(str, type_name);
+      }
       textures.push_back(texture);
       textures_.push_back(texture);
     }

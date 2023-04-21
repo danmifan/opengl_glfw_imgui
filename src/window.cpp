@@ -13,8 +13,6 @@
 #include <streambuf>
 #include <thread>
 
-#include <stb/stb_image.h>
-
 MyWindow::MyWindow(int width, int height, int framerate)
     : width_(width), height_(height), framerate_(framerate) {}
 
@@ -74,7 +72,7 @@ int MyWindow::init() {
   ImGui::CreateContext();
   ImGuiIO &io = ImGui::GetIO();
   (void)io;
-  // io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;  // Enable Docking
+  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;  // Enable Docking
   io.ConfigWindowsMoveFromTitleBarOnly = true;
 
   ImGui::StyleColorsDark();
@@ -84,95 +82,35 @@ int MyWindow::init() {
 
   shader_ = Shader("shaders/shader.vert", "shaders/shader.frag");
 
-  framebuffer_.create(800, 600);
+  framebuffer_.create(scene_width_, scene_height_);
 
   model_.load("models/tello/obj/DJITelloWhiteVray2015SC.obj");
   model2_.load("models/cube/cube.obj");
+  // model2_.load("models/debug2/debug.obj");
 
-  // meshes_ = model_.getMeshes();
-  Entity *root = model_.getEntity();
-  root->setScale(glm::vec3(0.01, 0.01, 0.01));
-  model_matrix_ = root->getTransform();
+  Entity *tello = model_.getEntity();
+  tello->setScale(glm::vec3(0.01, 0.01, 0.01));
 
-  scene_.addEntity(root);
-  // scene_.addEntity(model2_.getEntity());
+  Entity *grid = new Entity;
+  grid->create(createGrid(200, 200));
+  grid->setRotation(glm::vec3(90.0f, 0.0f, 0.0f));
 
-  camera_.create(800, 600, glm::vec3(0.0, 0.0, 2.0), 45.0f, 0.1f, 100.0f);
+  scene_.addEntity(tello);
+  scene_.addEntity(model2_.getEntity());
+  scene_.addEntity(grid);
 
-  // GRID
-  grid_texture_.loadFromImage("models/grid.png", "texture_diffuse");
-  std::vector<Vertex> grid_vertices;
-  std::vector<GLuint> grid_indices;
-  std::vector<Texture> grid_texture;
-  grid_texture.push_back(grid_texture_);
-
-  int width = 6;
-  int height = 6;
-  for (int y = 0; y < height; y++) {
-    for (int x = 0; x < width; x++) {
-      Vertex v1, v2, v3, v4, v5, v6;
-      GLuint i1, i2, i3;
-      int v = y * width + x;
-      i1 = v;
-      i2 = v + 1;
-      i3 = v + width + 1;
-
-      // std::cout << i1 << " " << i2 << " " << i3 << std::endl;
-
-      int test_x = x - width / 2;
-      int test_y = y - height / 2;
-      v1.position = {test_x, test_y, 0};
-      v2.position = {test_x + 1, test_y, 0};
-      v3.position = {test_x, test_y + 1, 0};
-      v1.normal = {0, 0, 1};
-      v2.normal = {0, 0, 1};
-      v3.normal = {0, 0, 1};
-      v1.tex_coords = {0, 0};
-      v2.tex_coords = {1, 0};
-      v3.tex_coords = {1, 1};
-
-      GLuint i4, i5, i6;
-      i4 = v + 1;
-      i5 = v + width + 2;
-      i6 = v + width + 1;
-
-      // std::cout << i4 << " " << i5 << " " << i6 << std::endl;
-
-      v4.position = {test_x + 1, test_y, 0};
-      v5.position = {test_x + 1, test_y + 1, 0};
-      v6.position = {test_x, test_y + 1, 0};
-      v4.normal = {0, 0, 1};
-      v5.normal = {0, 0, 1};
-      v6.normal = {0, 0, 1};
-      v4.tex_coords = {1, 0};
-      v5.tex_coords = {1, 1};
-      v6.tex_coords = {0, 1};
-
-      grid_vertices.push_back(v1);
-      grid_vertices.push_back(v2);
-      grid_vertices.push_back(v3);
-      grid_vertices.push_back(v4);
-      grid_vertices.push_back(v5);
-      grid_vertices.push_back(v6);
-      grid_indices.push_back(i1);
-      grid_indices.push_back(i2);
-      grid_indices.push_back(i3);
-      grid_indices.push_back(i4);
-      grid_indices.push_back(i5);
-      grid_indices.push_back(i6);
-    }
-  }
-
-  grid_mesh_.create(grid_vertices, grid_indices, grid_texture);
-  grid_entity_.create(&grid_mesh_);
+  camera_.create(scene_width_, scene_height_, glm::vec3(0.0, 1.0, 2.0), 45.0f,
+                 0.1f, 100.0f);
 
   return 1;
 }
 
 void MyWindow::update() {
-  stbi_set_flip_vertically_on_load(true);
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
+  // glEnable(GL_CULL_FACE);
+  // glFrontFace(GL_CCW);
+  // glCullFace(GL_CULL_FACE);
 
   ImGuizmo::SetOrthographic(false);
 
@@ -185,33 +123,28 @@ void MyWindow::update() {
     dy_ = 0.0;
     mouse_moved_ = false;
 
-    glViewport(0, 0, 800, 600);
+    glViewport(0, 0, scene_width_, scene_height_);
     framebuffer_.bind();
-    glClearColor(0.7255, 0.68, 0.533, 1.00f);
+    glClearColor(bg_color_.x, bg_color_.y, bg_color_.z, bg_color_.w);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    if (wireframe_) {
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    } else {
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
 
     shader_.activate();
 
     glm::mat4 view_proj = camera_.getViewProjMatrix();
     shader_.setUniform("view_projection", glm::value_ptr(view_proj));
 
-    static float angle = 0;
-    angle += 10.0 * ifps_;
-
-    grid_entity_.draw(&shader_);
-
-    // root_->setTransform(model_matrix_);
-    // for (const auto &root : scene_.getEntities()) {
-    //   root->setTransform(model_matrix_);
-    //   for (const auto &child : root->getChildren()) {
-    //     child->draw(&shader_);
-    //   }
-    // }
-
-    // vao_.unbind();
-    // glDisableVertexAttribArray(0);
-    // glDisableVertexAttribArray(1);
-    // glUseProgram(0);
+    for (const auto &root : scene_.getEntities()) {
+      root->draw(&shader_);
+      for (const auto &child : root->getChildren()) {
+        child->draw(&shader_);
+      }
+    }
 
     glViewport(0, 0, width_, height_);
     framebuffer_.unbind();
@@ -244,88 +177,107 @@ void MyWindow::update() {
       ImGui::ShowMetricsWindow();
     }
 
-    // ImGuiWindowFlags window_flags =
-    //     ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-    // const ImGuiViewport *viewport = ImGui::GetMainViewport();
-    // ImGui::SetNextWindowPos(viewport->WorkPos);
-    // ImGui::SetNextWindowSize(viewport->WorkSize);
-    // ImGui::SetNextWindowViewport(viewport->ID);
-    // ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    // ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    // window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse
-    // |
-    //                 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-    // window_flags |=
-    //     ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+    ImGuiWindowFlags window_flags =
+        ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+    const ImGuiViewport *viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    ImGui::SetNextWindowViewport(viewport->ID);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
+                    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+    window_flags |=
+        ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
-    // ImGui::Begin("Dockspace", NULL, window_flags);
+    ImGui::Begin("Dockspace", NULL, window_flags);
 
-    // ImGui::PopStyleVar(2);
+    ImGui::PopStyleVar(2);
 
-    // ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-    // ImGui::DockSpace(dockspace_id, ImVec2(0, 0));
+    ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+    ImGui::DockSpace(dockspace_id, ImVec2(0, 0));
 
     glm::vec3 pos = camera_.getPosition();
+
+    ImGui::Begin("Options");
+    if (ImGui::Button("wireframe")) {
+      wireframe_ = !wireframe_;
+    }
+
+    if (ImGui::CollapsingHeader("Background color")) {
+      if (ImGui::ColorPicker4("Background", color_)) {
+        bg_color_.x = color_[0];
+        bg_color_.y = color_[1];
+        bg_color_.z = color_[2];
+        bg_color_.w = color_[3];
+      }
+    }
+
+    ImGui::End();
 
     ImGui::Begin("Render");
     ImGui::Text("x %f y %f z %f", pos.x, pos.y, pos.z);
     ImGui::Image((void *)(intptr_t)framebuffer_.getColorTextureId(),
-                 ImVec2(800, 600), ImVec2(0, 1), ImVec2(1, 0));
+                 ImVec2(scene_width_, scene_height_), ImVec2(0, 1),
+                 ImVec2(1, 0));
+
     hovered_ = ImGui::IsItemHovered();
+
+    float max_x = ImGui::GetWindowPos().x + scene_width_;
+    float max_y = ImGui::GetWindowPos().y + scene_height_;
+
+    ImGui::PushClipRect(ImGui::GetWindowPos(), ImVec2(max_x, max_y), true);
 
     ImGuizmo::SetDrawlist();
 
     ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y,
-                      ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+                      scene_width_, scene_height_);
 
-    ImGuizmo::Manipulate(glm::value_ptr(camera_.getViewMatrix()),
-                         glm::value_ptr(camera_.getProjMatrix()),
-                         ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::WORLD,
-                         glm::value_ptr(model_matrix_));
+    if (selected_entity_) {
+      glm::mat4 world_transform = selected_entity_->getWorldTransform();
+      if (ImGuizmo::Manipulate(glm::value_ptr(camera_.getViewMatrix()),
+                               glm::value_ptr(camera_.getProjMatrix()),
+                               ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::WORLD,
+                               glm::value_ptr(world_transform))) {
+        glm::mat4 local_transform_ =
+            glm::inverse(selected_entity_->getParentTransform()) *
+            world_transform;
+        selected_entity_->setTransform(local_transform_);
+      }
+    }
 
-    // ImGuizmo::Manipulate(glm::value_ptr(camera_.getViewMatrix()),
-    //                      glm::value_ptr(camera_.getProjMatrix()),
-    //                      ImGuizmo::OPERATION::ROTATE_Y, ImGuizmo::WORLD,
-    //                      glm::value_ptr(model_matrix_));
-
-    // ImGuizmo::Manipulate(glm::value_ptr(camera_.getViewMatrix()),
-    //                      glm::value_ptr(camera_.getProjMatrix()),
-    //                      ImGuizmo::OPERATION::ROTATE_X, ImGuizmo::LOCAL,
-    //                      glm::value_ptr(model_matrix_));
-
-    // ImGuizmo::Manipulate(glm::value_ptr(camera_.getViewMatrix()),
-    //                      glm::value_ptr(camera_.getProjMatrix()),
-    //                      ImGuizmo::OPERATION::ROTATE_Z, ImGuizmo::LOCAL,
-    //                      glm::value_ptr(model_matrix_));
+    ImGui::PopClipRect();
 
     ImGui::End();
 
-    ImGuiWindowFlags window_flags =
-        ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking |
-        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
-        ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
-    ImGui::SetNextWindowBgAlpha(0.35f);  // Transparent background
-    if (ImGui::Begin("Example: Simple overlay", NULL, window_flags)) {
-      ImGui::Text("ifps : %f s", ifps_);
+    ImGui::Begin("Transform");
+    if (selected_entity_) {
+      ImGui::Text("ID : %i", selected_entity_->getID());
+      glm::vec3 position = selected_entity_->getPosition();
+      glm::vec3 rotation = selected_entity_->getAngles();
+      glm::vec3 scale = selected_entity_->getScale();
+      ImGui::InputFloat3("Position", glm::value_ptr(position));
+      ImGui::InputFloat3("Rotation", glm::value_ptr(rotation));
+      ImGui::InputFloat3("Scale", glm::value_ptr(scale));
     }
     ImGui::End();
+
+    // ImGuiWindowFlags flags =
+    //     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking |
+    //     ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings
+    //     | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+    // ImGui::SetNextWindowBgAlpha(0.35f);  // Transparent background
+    // if (ImGui::Begin("Example: Simple overlay", NULL, flags)) {
+    //   ImGui::Text("ifps : %f s", ifps_);
+    // }
+    // ImGui::End();
 
     // Scene graph
     ImGui::Begin("Scene");
 
-    for (const auto &root : scene_.getEntities()) {
-      if (ImGui::TreeNode(root->getName().c_str())) {
-        for (const auto &child : root->getChildren()) {
-          if (child->getChildren().size() == 0) {
-            ImGui::Text("%s", child->getName().c_str());
-          }
-          // if (ImGui::TreeNode(child->getName().c_str())) {
-          //   ImGui::TreePop();
-          // }
-        }
-        ImGui::TreePop();
-      }
-    }
+    showEntities(scene_.getEntities());
+
+    ImGui::End();
 
     ImGui::End();
 
@@ -455,4 +407,96 @@ void MyWindow::scrollCallback(GLFWwindow * /*window*/, double /*xoffset*/,
   if (yoffset < 0) {
     camera_.backward();
   }
+}
+
+void MyWindow::showEntities(const std::vector<Entity *> &entities) {
+  for (const auto &entity : entities) {
+    int tree_flags = ImGuiTreeNodeFlags_OpenOnArrow;
+
+    if (entity->getID() == selected_id_) {
+      tree_flags |= ImGuiTreeNodeFlags_Selected;
+    }
+
+    if (entity->getChildren().size() == 0) {
+      tree_flags |= ImGuiTreeNodeFlags_Leaf;
+    }
+
+    bool node_open = ImGui::TreeNodeEx(entity->getName().c_str(), tree_flags);
+    if (ImGui::IsItemClicked()) {
+      selected_id_ = entity->getID();
+      selected_entity_ = entity;
+    }
+    if (node_open) {
+      showEntities(entity->getChildren());
+
+      ImGui::TreePop();
+    }
+  }
+}
+
+Mesh *MyWindow::createGrid(int width, int height) {
+  std::vector<Vertex> vertices;
+  std::vector<GLuint> indices;
+  std::vector<Texture> textures;
+
+  // GRID
+  Texture texture;
+  texture.loadFromImage("models/grid.png", "texture_diffuse");
+  // texture.loadFromImage("models/debug.jpg", "texture_diffuse");
+
+  textures.push_back(texture);
+
+  Mesh *mesh = new Mesh;
+
+  int i = -1;
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      Vertex v1, v2, v3, v4, v5, v6;
+      GLuint i1, i2, i3, i4, i5, i6;
+      i1 = ++i;
+      i2 = ++i;
+      i3 = ++i;
+      i4 = ++i;
+      i5 = ++i;
+      i6 = ++i;
+
+      int test_x = x - width / 2;
+      int test_y = y - width / 2;
+      v1.position = {test_x + 1, test_y, 0};
+      v2.position = {test_x, test_y + 1, 0};
+      v3.position = {test_x, test_y, 0};
+      v1.normal = {0, 0, 1};
+      v2.normal = {0, 0, 1};
+      v3.normal = {0, 0, 1};
+      v1.tex_coords = {1, 1};
+      v2.tex_coords = {0, 0};
+      v3.tex_coords = {0, 1};
+
+      v4.position = {test_x + 1, test_y, 0};
+      v5.position = {test_x + 1, test_y + 1, 0};
+      v6.position = {test_x, test_y + 1, 0};
+      v4.normal = {0, 0, 1};
+      v5.normal = {0, 0, 1};
+      v6.normal = {0, 0, 1};
+      v4.tex_coords = {1, 1};
+      v5.tex_coords = {1, 0};
+      v6.tex_coords = {0, 0};
+
+      vertices.push_back(v1);
+      vertices.push_back(v2);
+      vertices.push_back(v3);
+      vertices.push_back(v4);
+      vertices.push_back(v5);
+      vertices.push_back(v6);
+      indices.push_back(i1);
+      indices.push_back(i2);
+      indices.push_back(i3);
+      indices.push_back(i4);
+      indices.push_back(i5);
+      indices.push_back(i6);
+    }
+  }
+
+  mesh->create(vertices, indices, textures);
+  return mesh;
 }

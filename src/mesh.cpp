@@ -46,7 +46,7 @@ void Mesh::draw(Shader *shader) {
     std::string number;
     std::string name = textures_[i].getTypeName();
 
-    std::cout << name << std::endl;
+    // std::cout << name << std::endl;
 
     if (name == "texture_diffuse") {
       number = std::to_string(diffuseNr++);
@@ -58,9 +58,21 @@ void Mesh::draw(Shader *shader) {
 
       textures_[i].bind();
 
-      std::cout << glGetError() << std::endl;
+      // std::cout << glGetError() << std::endl;
     }
   }
+
+  // for (const auto &vertex : vertices_) {
+  //   std::cout << vertex.position.x << " " << vertex.position.y << " "
+  //             << vertex.position.z << " " << vertex.tex_coords.x << " "
+  //             << vertex.tex_coords.y << std::endl;
+  // }
+
+  // std::cout << "Indices : " << std::endl;
+
+  // for (const auto &index : indices_) {
+  //   std::cout << index << std::endl;
+  // }
 
   // std::cout << name_ << std::endl;
   // std::cout << vertices_.size() << std::endl;
