@@ -19,8 +19,9 @@ void Renderer::draw_(Entity* entity) {
   mvp_ = view_proj * model;
   Material* material = entity->getMaterial();
   if (material) {
-    material->setUniform("mvp", glm::value_ptr(mvp_));
     material->draw();
+
+    material->setUniform("mvp", glm::value_ptr(mvp_));
   }
 
   entity->draw();

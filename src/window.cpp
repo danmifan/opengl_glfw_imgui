@@ -78,6 +78,7 @@ int MyWindow::init() {
   ImGui_ImplOpenGL3_Init("#version 330");
 
   shader_ = Shader("shaders/shader.vert", "shaders/shader.frag");
+  pc_shader_ = Shader("shaders/point_cloud.vert", "shaders/point_cloud.frag");
 
   framebuffer_.create(scene_width_, scene_height_);
 
@@ -99,12 +100,16 @@ int MyWindow::init() {
 
   renderer_.create(&scene_, &camera_);
 
+  point_cloud_.load("point_clouds/point_cloud_rgb.xyz");
+  point_cloud_.init(&pc_shader_);
+
   return 1;
 }
 
 void MyWindow::update() {
   glEnable(GL_DEPTH_TEST);
-  glEnable(GL_MULTISAMPLE);
+  glEnable(GL_PROGRAM_POINT_SIZE);
+  // glEnable(GL_MULTISAMPLE);
   glDepthFunc(GL_LESS);
   // glEnable(GL_CULL_FACE);
   // glFrontFace(GL_CCW);
@@ -134,6 +139,8 @@ void MyWindow::update() {
 
     // Draw scene graph
     renderer_.draw();
+
+    point_cloud_.draw(camera_.getViewProjMatrix());
 
     framebuffer_.unbind();
 
@@ -249,8 +256,10 @@ void MyWindow::update() {
 
     if (selected_entity_) {
       glm::mat4 world_transform = selected_entity_->getWorldTransform();
-      if (ImGuizmo::Manipulate(glm::value_ptr(camera_.getViewMatrix()),
-                               glm::value_ptr(camera_.getProjMatrix()),
+      glm::mat4 view = camera_.getViewMatrix();
+      glm::mat4 proj = camera_.getProjMatrix();
+
+      if (ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj),
                                current_operation_, current_mode_,
                                glm::value_ptr(world_transform))) {
         glm::mat4 local_transform_ =

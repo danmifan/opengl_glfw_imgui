@@ -13,6 +13,8 @@ class Shader {
   void clean();
   GLuint getID();
 
+  void setUniform(std::string name, GLfloat* mat);
+
  private:
   std::string loadShaderFile(std::string filename);
   void compileErrorCheck(GLuint shader);

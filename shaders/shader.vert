@@ -8,7 +8,7 @@ layout(location = 3) in vec3 color;
 out vec3 o_color;
 out vec2 o_tex_coords;
 
-uniform mat4 model;
+// uniform mat4 model;
 // uniform mat4 view_projection;
 uniform mat4 mvp;
 

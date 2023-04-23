@@ -68,6 +68,8 @@ void Shader::compileErrorCheck(GLuint shader) {
     std::cout << error_log << std::endl;
 
     glDeleteShader(shader);
+
+    exit(-1);
   } else {
     std::cout << "Shader compilation successful" << std::endl;
   }
@@ -78,3 +80,7 @@ GLuint Shader::getID() { return id_; }
 void Shader::activate() { glUseProgram(id_); }
 
 void Shader::clean() { glDeleteProgram(id_); }
+
+void Shader::setUniform(std::string name, GLfloat* mat) {
+  glUniformMatrix4fv(glGetUniformLocation(id_, name.c_str()), 1, GL_FALSE, mat);
+}

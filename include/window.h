@@ -22,6 +22,7 @@
 #include "model.h"
 #include "scene.h"
 #include "renderer.h"
+#include "point_cloud.h"
 
 class MyWindow {
  public:
@@ -37,12 +38,14 @@ class MyWindow {
   int framerate_;
 
   Shader shader_;
+  Shader pc_shader_;
   Model model_;
   Model model2_;
   Scene scene_;
   Camera camera_;
   Framebuffer framebuffer_;
   Renderer renderer_;
+  PointCloud point_cloud_;
 
   bool demo_ = false;
   bool metrics_ = false;
@@ -58,8 +61,8 @@ class MyWindow {
   std::map<int, bool> keys_;
   bool wireframe_ = false;
 
-  int scene_width_ = 800;
-  int scene_height_ = 600;
+  int scene_width_ = 1600;
+  int scene_height_ = 900;
 
   void keyCallback(GLFWwindow* window, int key, int scancode, int action,
                    int mods);
