@@ -14,7 +14,16 @@ Entity::Entity() {
   global_id++;
 }
 
-void Entity::create(Mesh* mesh) { mesh_ = mesh; }
+void Entity::create(Mesh* mesh, std::string name) {
+  mesh_ = mesh;
+  name_ = name;
+}
+
+void Entity::create(Mesh* mesh, Material* material, std::string name) {
+  mesh_ = mesh;
+  material_ = material;
+  name_ = name;
+}
 
 void Entity::setPosition(glm::vec3 position) {
   position_ = position;
@@ -81,9 +90,7 @@ glm::mat4 Entity::getWorldTransform() { return world_transform_; }
 
 glm::mat4 Entity::getParentTransform() { return parent_transform_; }
 
-float* Entity::getTransformPtr() { return glm::value_ptr(local_transform_); }
-
-void Entity::setMesh(Mesh* mesh) { mesh_ = mesh; }
+// void Entity::setMesh(Mesh* mesh) { mesh_ = mesh; }
 
 void Entity::updateMatrix() {
   glm::mat4 mat = glm::mat4(1.0f);
@@ -99,10 +106,12 @@ void Entity::updateMatrix() {
   }
 }
 
-void Entity::draw(Shader* shader) {
-  if (mesh_) {
-    shader->setUniform("model", glm::value_ptr(world_transform_));
-    mesh_->draw(shader);
+void Entity::draw() {
+  if (mesh_ && material_) {
+    material_->setUniform("view_projection", glm::value_ptr(view_proj_));
+    material_->setUniform("model", glm::value_ptr(world_transform_));
+    material_->draw();
+    mesh_->draw();
   }
 }
 
@@ -131,3 +140,5 @@ unsigned int Entity::getID() { return id_; }
 void Entity::setName(std::string name) { name_ = name; }
 
 std::string Entity::getName() { return name_; }
+
+void Entity::setViewProj(glm::mat4 view_proj) { view_proj_ = view_proj; }

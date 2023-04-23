@@ -6,6 +6,11 @@
 #include <GLFW/glfw3.h>
 #include <glm/ext.hpp>
 
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+#include <ImGuizmo.h>
+
 #include <list>
 #include <map>
 
@@ -33,7 +38,6 @@ class MyWindow {
   Shader shader_;
   Model model_;
   Model model2_;
-  glm::mat4 model_matrix_ = glm::mat4(1.0f);
   Scene scene_;
   Camera camera_;
   Framebuffer framebuffer_;
@@ -61,13 +65,17 @@ class MyWindow {
   void cursorPosCallback(GLFWwindow* window, double xpos, double ypos);
   void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
   void updateCamera();
-  Mesh* createGrid(int width, int height);
+  Entity* createGrid(int width, int height);
+  Entity* createCube(int x, int y, int z);
   void showEntities(const std::vector<Entity*>& entities);
 
   unsigned int selected_id_ = -1;
   Entity* selected_entity_ = nullptr;
   glm::vec4 bg_color_ = {0.48904, 0.690881, 0.776892, 1.0f};
   float color_[4];
+
+  ImGuizmo::OPERATION current_operation_ = ImGuizmo::OPERATION::TRANSLATE;
+  ImGuizmo::MODE current_mode_ = ImGuizmo::MODE::WORLD;
 };
 
 #endif  // IMGUI_WINDOW_H

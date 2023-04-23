@@ -2,6 +2,7 @@
 
 void Model::load(std::string path) {
   Assimp::Importer importer;
+#warning flip uv here
   const aiScene* scene = importer.ReadFile(
       path.c_str(), aiProcess_Triangulate | aiProcess_FlipUVs);
 
@@ -96,7 +97,7 @@ Mesh* Model::processMesh(aiMesh* mesh, const aiScene* scene) {
   std::string name = std::string(mesh->mName.C_Str());
 
   Mesh* my_mesh = new Mesh();
-  my_mesh->create(vertices, indices, textures, name);
+  my_mesh->create(vertices, indices, name);
   return my_mesh;
 }
 

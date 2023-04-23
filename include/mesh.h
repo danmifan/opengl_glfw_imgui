@@ -13,14 +13,14 @@
 class Mesh {
  public:
   void create(std::vector<Vertex> vertices, std::vector<GLuint> indices,
-              std::vector<Texture> textures, std::string name = "");
-  void draw(Shader* shader);
+              std::string name = "");
+  void create(std::vector<Vertex> vertices, std::string name = "");
+  void draw();
   std::string getName();
 
  private:
   std::vector<Vertex> vertices_;
   std::vector<GLuint> indices_;
-  std::vector<Texture> textures_;
   std::string name_ = "";
   GLuint vao_;
   GLuint vbo_;

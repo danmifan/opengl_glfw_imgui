@@ -73,23 +73,8 @@ void Shader::compileErrorCheck(GLuint shader) {
   }
 }
 
+GLuint Shader::getID() { return id_; }
+
 void Shader::activate() { glUseProgram(id_); }
 
 void Shader::clean() { glDeleteProgram(id_); }
-
-void Shader::setUniform(std::string name, GLfloat x) {
-  glUniform1f(glGetUniformLocation(id_, name.c_str()), x);
-}
-
-void Shader::setUniform(std::string name, GLfloat x, GLfloat y, GLfloat z,
-                        GLfloat w) {
-  glUniform4f(glGetUniformLocation(id_, name.c_str()), x, y, z, w);
-}
-
-void Shader::setUniform(std::string name, GLfloat* mat) {
-  glUniformMatrix4fv(glGetUniformLocation(id_, name.c_str()), 1, GL_FALSE, mat);
-}
-
-void Shader::setUniform(std::string name, GLint i) {
-  glUniform1i(glGetUniformLocation(id_, name.c_str()), i);
-}

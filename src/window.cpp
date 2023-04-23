@@ -2,11 +2,6 @@
 
 #include <glm/gtx/string_cast.hpp>
 
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
-#include <ImGuizmo.h>
-
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -85,18 +80,19 @@ int MyWindow::init() {
   framebuffer_.create(scene_width_, scene_height_);
 
   model_.load("models/tello/obj/DJITelloWhiteVray2015SC.obj");
-  model2_.load("models/cube/cube.obj");
-  // model2_.load("models/debug2/debug.obj");
 
   Entity *tello = model_.getEntity();
   tello->setScale(glm::vec3(0.01, 0.01, 0.01));
 
   Entity *grid = new Entity;
-  grid->create(createGrid(200, 200));
+  grid = createGrid(200, 200);
   grid->setRotation(glm::vec3(90.0f, 0.0f, 0.0f));
 
+  Entity *cube = new Entity;
+  cube = createCube(0, 0, 0);
+
   scene_.addEntity(tello);
-  scene_.addEntity(model2_.getEntity());
+  scene_.addEntity(cube);
   scene_.addEntity(grid);
 
   camera_.create(scene_width_, scene_height_, glm::vec3(0.0, 1.0, 2.0), 45.0f,
@@ -137,17 +133,20 @@ void MyWindow::update() {
     shader_.activate();
 
     glm::mat4 view_proj = camera_.getViewProjMatrix();
-    shader_.setUniform("view_projection", glm::value_ptr(view_proj));
+    // shader_.setUniform("view_projection", glm::value_ptr(view_proj));
 
     for (const auto &root : scene_.getEntities()) {
-      root->draw(&shader_);
+      root->setViewProj(view_proj);
+      root->draw();
       for (const auto &child : root->getChildren()) {
-        child->draw(&shader_);
+        child->setViewProj(view_proj);
+        child->draw();
       }
     }
 
-    glViewport(0, 0, width_, height_);
     framebuffer_.unbind();
+
+    glViewport(0, 0, width_, height_);
     glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -177,7 +176,7 @@ void MyWindow::update() {
       ImGui::ShowMetricsWindow();
     }
 
-    ImGuiWindowFlags window_flags =
+    ImGuiWindowFlags dockspace_flags =
         ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
     const ImGuiViewport *viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -185,12 +184,13 @@ void MyWindow::update() {
     ImGui::SetNextWindowViewport(viewport->ID);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
-                    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-    window_flags |=
+    dockspace_flags |= ImGuiWindowFlags_NoTitleBar |
+                       ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+                       ImGuiWindowFlags_NoMove;
+    dockspace_flags |=
         ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
-    ImGui::Begin("Dockspace", NULL, window_flags);
+    ImGui::Begin("Dockspace", NULL, dockspace_flags);
 
     ImGui::PopStyleVar(2);
 
@@ -217,6 +217,29 @@ void MyWindow::update() {
 
     ImGui::Begin("Render");
     ImGui::Text("x %f y %f z %f", pos.x, pos.y, pos.z);
+    if (ImGui::Button("Pos")) {
+      current_operation_ = ImGuizmo::TRANSLATE;
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("Rot")) {
+      current_operation_ = ImGuizmo::ROTATE;
+    }
+    ImGui::SameLine();
+
+    if (ImGui::Button("Scale")) {
+      current_operation_ = ImGuizmo::SCALE;
+    }
+    ImGui::SameLine();
+
+    if (ImGui::Button("World")) {
+      current_mode_ = ImGuizmo::MODE::WORLD;
+    }
+    ImGui::SameLine();
+
+    if (ImGui::Button("Local")) {
+      current_mode_ = ImGuizmo::MODE::LOCAL;
+    }
     ImGui::Image((void *)(intptr_t)framebuffer_.getColorTextureId(),
                  ImVec2(scene_width_, scene_height_), ImVec2(0, 1),
                  ImVec2(1, 0));
@@ -237,7 +260,7 @@ void MyWindow::update() {
       glm::mat4 world_transform = selected_entity_->getWorldTransform();
       if (ImGuizmo::Manipulate(glm::value_ptr(camera_.getViewMatrix()),
                                glm::value_ptr(camera_.getProjMatrix()),
-                               ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::WORLD,
+                               current_operation_, current_mode_,
                                glm::value_ptr(world_transform))) {
         glm::mat4 local_transform_ =
             glm::inverse(selected_entity_->getParentTransform()) *
@@ -279,7 +302,7 @@ void MyWindow::update() {
 
     ImGui::End();
 
-    ImGui::End();
+    ImGui::End();  // end of dockspace
 
     ImGui::Render();
 
@@ -434,31 +457,21 @@ void MyWindow::showEntities(const std::vector<Entity *> &entities) {
   }
 }
 
-Mesh *MyWindow::createGrid(int width, int height) {
-  std::vector<Vertex> vertices;
-  std::vector<GLuint> indices;
-  std::vector<Texture> textures;
-
+Entity *MyWindow::createGrid(int width, int height) {
   // GRID
-  Texture texture;
-  texture.loadFromImage("models/grid.png", "texture_diffuse");
+  Texture *texture = new Texture;
+  texture->loadFromImage("models/grid.png", "texture_diffuse");
   // texture.loadFromImage("models/debug.jpg", "texture_diffuse");
 
-  textures.push_back(texture);
-
   Mesh *mesh = new Mesh;
+  Material *material = new Material;
+  material->create(&shader_, texture, "grid_material");
 
-  int i = -1;
+  std::vector<Vertex> vertices;
+
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
       Vertex v1, v2, v3, v4, v5, v6;
-      GLuint i1, i2, i3, i4, i5, i6;
-      i1 = ++i;
-      i2 = ++i;
-      i3 = ++i;
-      i4 = ++i;
-      i5 = ++i;
-      i6 = ++i;
 
       int test_x = x - width / 2;
       int test_y = y - width / 2;
@@ -488,15 +501,77 @@ Mesh *MyWindow::createGrid(int width, int height) {
       vertices.push_back(v4);
       vertices.push_back(v5);
       vertices.push_back(v6);
-      indices.push_back(i1);
-      indices.push_back(i2);
-      indices.push_back(i3);
-      indices.push_back(i4);
-      indices.push_back(i5);
-      indices.push_back(i6);
     }
   }
 
-  mesh->create(vertices, indices, textures);
-  return mesh;
+  mesh->create(vertices, "grid_mesh");
+  Entity *grid = new Entity;
+  grid->create(mesh, material, "grid");
+  return grid;
+}
+
+Entity *MyWindow::createCube(int x, int y, int z) {
+  std::vector<Vertex> vertices;
+
+  Texture *texture = new Texture;
+  texture->loadFromImage("models/grid.png", "texture_diffuse");
+  // texture.loadFromImage("models/debug.jpg", "texture_diffuse");
+
+  Mesh *mesh = new Mesh;
+
+  // Front
+  vertices.push_back({{1, -1, 0}, {0, 0, 1}, {1, 1}});
+  vertices.push_back({{-1, 1, 0}, {0, 0, 1}, {0, 0}});
+  vertices.push_back({{-1, -1, 0}, {0, 0, 1}, {0, 1}});
+  vertices.push_back({{1, -1, 0}, {0, 0, 1}, {1, 1}});
+  vertices.push_back({{1, 1, 0}, {0, 0, 1}, {1, 0}});
+  vertices.push_back({{-1, 1, 0}, {0, 0, 1}, {0, 0}});
+
+  // Top
+  vertices.push_back({{1, 1, 0}, {0, 1, 0}, {1, 1}});
+  vertices.push_back({{-1, 1, -2}, {0, 1, 0}, {0, 0}});
+  vertices.push_back({{-1, 1, 0}, {0, 1, 0}, {0, 1}});
+  vertices.push_back({{1, 1, 0}, {0, 1, 0}, {1, 1}});
+  vertices.push_back({{1, 1, -2}, {0, 1, 0}, {1, 0}});
+  vertices.push_back({{-1, 1, -2}, {0, 1, 0}, {0, 0}});
+
+  // Bottom
+  vertices.push_back({{1, -1, -2}, {0, -1, 0}, {1, 1}});
+  vertices.push_back({{-1, -1, 0}, {0, -1, 0}, {0, 0}});
+  vertices.push_back({{-1, -1, -2}, {0, -1, 0}, {0, 1}});
+  vertices.push_back({{1, -1, -2}, {0, -1, 0}, {1, 1}});
+  vertices.push_back({{1, -1, 0}, {0, -1, 0}, {1, 0}});
+  vertices.push_back({{-1, -1, 0}, {0, -1, 0}, {0, 0}});
+
+  // Back
+  vertices.push_back({{-1, -1, -2}, {0, 0, -1}, {1, 1}});
+  vertices.push_back({{1, 1, -2}, {0, 0, -1}, {0, 0}});
+  vertices.push_back({{1, -1, -2}, {0, 0, -1}, {0, 1}});
+  vertices.push_back({{-1, -1, -2}, {0, 0, -1}, {1, 1}});
+  vertices.push_back({{-1, 1, -2}, {0, 0, -1}, {1, 0}});
+  vertices.push_back({{1, 1, -2}, {0, 0, -1}, {0, 0}});
+
+  // Left
+  vertices.push_back({{-1, -1, 0}, {-1, 0, 0}, {1, 1}});
+  vertices.push_back({{-1, 1, -2}, {-1, 0, 0}, {0, 0}});
+  vertices.push_back({{-1, -1, -2}, {-1, 0, 0}, {0, 1}});
+  vertices.push_back({{-1, -1, 0}, {-1, 0, 0}, {1, 1}});
+  vertices.push_back({{-1, 1, 0}, {-1, 0, 0}, {1, 0}});
+  vertices.push_back({{-1, 1, -2}, {-1, 0, 0}, {0, 0}});
+
+  // Right
+  vertices.push_back({{1, -1, -2}, {1, 0, 0}, {1, 1}});
+  vertices.push_back({{1, 1, 0}, {1, 0, 0}, {0, 0}});
+  vertices.push_back({{1, -1, 0}, {1, 0, 0}, {0, 1}});
+  vertices.push_back({{1, -1, -2}, {1, 0, 0}, {1, 1}});
+  vertices.push_back({{1, 1, -2}, {1, 0, 0}, {1, 0}});
+  vertices.push_back({{1, 1, 0}, {1, 0, 0}, {0, 0}});
+
+  mesh->create(vertices, "cube_mesh");
+  Material *material = new Material;
+  material->create(&shader_, texture, "cube_material");
+
+  Entity *cube = new Entity;
+  cube->create(mesh, material, "cube");
+  return cube;
 }

@@ -4,29 +4,33 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#include "shader.h"
 #include "mesh.h"
+#include "material.h"
 
 class Entity {
  public:
   Entity();
-  void create(Mesh* mesh);
+  void create(Mesh* mesh, std::string name = "default");
+  void create(Mesh* mesh, Material* material, std::string name = "default");
 
   void setPosition(glm::vec3 position);
   glm::vec3 getPosition();
+
   void setRotation(glm::vec3 angles);
   void getRotation();
   glm::vec3 getAngles();
+
   void setScale(glm::vec3 scale);
   glm::vec3 getScale();
+
   void setTransform(glm::mat4 transform);
   void setParentTransform(glm::mat4 parent_transform);
   glm::mat4 getTransform();
   glm::mat4 getWorldTransform();
   glm::mat4 getParentTransform();
-  float* getTransformPtr();
-  void setMesh(Mesh* mesh);
-  void draw(Shader* shader);
+
+  // void setMesh(Mesh* mesh);
+  void draw();
 
   void setName(std::string name);
   std::string getName();
@@ -36,6 +40,8 @@ class Entity {
   std::vector<Entity*> getChildren();
 
   unsigned int getID();
+
+  void setViewProj(glm::mat4 view_proj);
 
  private:
   glm::mat4 parent_transform_ = glm::mat4(1.0f);
@@ -47,10 +53,12 @@ class Entity {
   glm::quat rotation_ = glm::quat(glm::vec3(0, 0, 0));
 
   Mesh* mesh_ = nullptr;
-  Shader* shader_ = nullptr;
+  Material* material_ = nullptr;
   std::vector<Entity*> children_;
   unsigned int id_;
-  std::string name_ = "default";
+  std::string name_;
+
+  glm::mat4 view_proj_;
 
   void updateMatrix();
 };
