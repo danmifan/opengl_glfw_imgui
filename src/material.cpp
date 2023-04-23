@@ -5,24 +5,23 @@ void Material::create(Shader* shader, std::string name) {
   name_ = name;
 }
 
-void Material::create(Shader* shader, Texture* albedo, std::string name) {
+void Material::create(Shader* shader, Texture* diffuse, std::string name) {
   shader_ = shader;
-  albedo_ = albedo;
+  diffuse_ = diffuse;
   name_ = name;
 }
 
 void Material::draw() {
+  shader_->activate();
   glActiveTexture(GL_TEXTURE0);
 
-  std::string name = albedo_->getTypeName();
+  // std::string name = diffuse_->getTypeName();
 
-  if (name == "texture_diffuse") {
-    setUniform(name, 0);
+  setUniform("texture_diffuse", 0);
 
-    albedo_->bind();
+  diffuse_->bind();
 
-    // std::cout << glGetError() << std::endl;
-  }
+  // std::cout << glGetError() << std::endl;
   glActiveTexture(GL_TEXTURE0);
 }
 
@@ -43,6 +42,12 @@ void Material::setUniform(std::string name, GLfloat* mat) {
 void Material::setUniform(std::string name, GLint i) {
   glUniform1i(glGetUniformLocation(shader_->getID(), name.c_str()), i);
 }
+
+void Material::setDiffuse(Texture* diffuse) { diffuse_ = diffuse; }
+
+Texture* Material::getDiffuse() { return diffuse_; }
+
+void Material::setNormals(Texture* normals) { normals_ = normals; }
 
 // unsigned int diffuseNr = 1;
 // unsigned int specularNr = 1;
@@ -70,3 +75,5 @@ void Material::setUniform(std::string name, GLint i) {
 //     // std::cout << glGetError() << std::endl;
 //   }
 // }
+
+std::string Material::getName() { return name_; }

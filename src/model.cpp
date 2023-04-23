@@ -1,6 +1,6 @@
 #include "model.h"
 
-void Model::load(std::string path) {
+Entity* Model::load(std::string path, Shader* shader) {
   Assimp::Importer importer;
 #warning flip uv here
   const aiScene* scene = importer.ReadFile(
@@ -9,19 +9,26 @@ void Model::load(std::string path) {
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE ||
       !scene->mRootNode) {
     std::cout << "ERROR::ASSIMP::" << importer.GetErrorString() << std::endl;
-    return;
+    return nullptr;
   }
 
   path_ = path;
 
+  shader_ = shader;
+
   std::cout << "Importing model " << path << std::endl;
 
-  root_entity_ = new Entity();
-  root_entity_->setName(std::string(scene->mRootNode->mName.C_Str()));
+  Entity* root_entity = new Entity();
+  root_entity->setName(std::string(scene->mRootNode->mName.C_Str()));
 
-  processNode(scene->mRootNode, scene, root_entity_);
+  // Load materials
+  processMaterials(scene);
+
+  processNode(scene->mRootNode, scene, root_entity);
 
   std::cout << "Model imported" << std::endl;
+
+  return root_entity;
 }
 
 void Model::processNode(aiNode* node, const aiScene* scene, Entity* entity) {
@@ -30,12 +37,12 @@ void Model::processNode(aiNode* node, const aiScene* scene, Entity* entity) {
 
   for (unsigned int i = 0; i < node->mNumMeshes; i++) {
     aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-    Mesh* my_mesh = processMesh(mesh, scene);
+    Mesh* my_mesh = processMesh(mesh);
+    Assets::get().meshes.push_back(my_mesh);
     Entity* child = new Entity();
-    child->create(my_mesh);
-    child->setName(std::string(mesh->mName.C_Str()));
+    child->create(my_mesh, materials_[mesh->mMaterialIndex],
+                  std::string(mesh->mName.C_Str()));
     entity->addChild(child);
-    // meshes_.push_back(processMesh(mesh, scene));
   }
 
   for (unsigned int i = 0; i < node->mNumChildren; i++) {
@@ -43,10 +50,9 @@ void Model::processNode(aiNode* node, const aiScene* scene, Entity* entity) {
   }
 }
 
-Mesh* Model::processMesh(aiMesh* mesh, const aiScene* scene) {
+Mesh* Model::processMesh(aiMesh* mesh) {
   std::vector<Vertex> vertices;
   std::vector<unsigned int> indices;
-  std::vector<Texture> textures;
 
   for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
     Vertex vertex;
@@ -75,25 +81,6 @@ Mesh* Model::processMesh(aiMesh* mesh, const aiScene* scene) {
     }
   }
 
-  aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-
-  // 1. diffuse maps
-  std::vector<Texture> diffuseMaps =
-      loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
-  textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-  // 2. specular maps
-  std::vector<Texture> specularMaps = loadMaterialTextures(
-      material, aiTextureType_SPECULAR, "texture_specular");
-  textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
-  // 3. normal maps
-  std::vector<Texture> normalMaps =
-      loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
-  textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
-  // 4. height maps
-  std::vector<Texture> heightMaps =
-      loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
-  textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
-
   std::string name = std::string(mesh->mName.C_Str());
 
   Mesh* my_mesh = new Mesh();
@@ -101,40 +88,48 @@ Mesh* Model::processMesh(aiMesh* mesh, const aiScene* scene) {
   return my_mesh;
 }
 
-std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat,
-                                                 aiTextureType type,
-                                                 std::string type_name) {
-  std::vector<Texture> textures;
-  for (unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
-    aiString ai_str;
-    mat->GetTexture(type, i, &ai_str);
-    std::string tmp_path = path_.substr(0, path_.find_last_of('/'));
-    std::string str = tmp_path + "/" + std::string(ai_str.C_Str());
+Texture* Model::loadMaterialTexture(aiMaterial* material, aiTextureType type,
+                                    TextureType my_type) {
+  if (material->GetTextureCount(type) > 0) {
+    Texture* texture = new Texture;
 
-    // check if texture was loaded before and if so, continue to next iteration:
-    // skip loading a new texture
-    bool skip = false;
-    for (unsigned int j = 0; j < textures_.size(); j++) {
-      if (textures_[j].getPath() == str) {
-        textures.push_back(textures_[j]);
-        skip = true;
-        break;
-      }
+    aiString texture_name_ai;
+    material->GetTexture(type, 0, &texture_name_ai);
+    texture->setName(std::string(texture_name_ai.C_Str()));
+    std::string tmp_path = path_.substr(0, path_.find_last_of('/'));
+    std::string texture_path =
+        tmp_path + "/" + std::string(texture_name_ai.C_Str());
+
+    if (texture_path.find(".dds") != std::string::npos) {
+      texture->loadDDSFile(texture_path, my_type);
+    } else {
+      texture->loadFromImage(texture_path, my_type);
     }
-    if (!skip) {  // if texture hasn't been loaded already, load it
-      Texture texture;
-      if (str.find(".dds") != std::string::npos) {
-        texture.loadDDSFile(str, type_name);
-      } else {
-        texture.loadFromImage(str, type_name);
-      }
-      textures.push_back(texture);
-      textures_.push_back(texture);
-    }
+
+    return texture;
+  } else {
+    return nullptr;
   }
-  return textures;
 }
 
-std::vector<Mesh> Model::getMeshes() { return meshes_; }
+void Model::processMaterials(const aiScene* scene) {
+  unsigned int nb_materials = scene->mNumMaterials;
 
-Entity* Model::getEntity() { return root_entity_; }
+  for (unsigned int i = 0; i < nb_materials; i++) {
+    aiMaterial* material = scene->mMaterials[i];
+    Material* mat = new Material;
+
+    Texture* diffuse = loadMaterialTexture(material, aiTextureType_DIFFUSE,
+                                           TextureType::DIFFUSE);
+    Texture* normals = loadMaterialTexture(material, aiTextureType_NORMALS,
+                                           TextureType::NORMALS);
+
+    std::string name = std::string(material->GetName().C_Str());
+
+    mat->create(shader_, diffuse, name);
+
+    Assets::get().materials.push_back(mat);
+
+    materials_[i] = mat;
+  }
+}

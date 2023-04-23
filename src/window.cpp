@@ -79,17 +79,14 @@ int MyWindow::init() {
 
   framebuffer_.create(scene_width_, scene_height_);
 
-  model_.load("models/tello/obj/DJITelloWhiteVray2015SC.obj");
-
-  Entity *tello = model_.getEntity();
+  Entity *tello =
+      model_.load("models/tello/obj/DJITelloWhiteVray2015SC.obj", &shader_);
   tello->setScale(glm::vec3(0.01, 0.01, 0.01));
 
-  Entity *grid = new Entity;
-  grid = createGrid(200, 200);
+  Entity *grid = createGrid(200, 200);
   grid->setRotation(glm::vec3(90.0f, 0.0f, 0.0f));
 
-  Entity *cube = new Entity;
-  cube = createCube(0, 0, 0);
+  Entity *cube = createCube(0, 0, 0);
 
   scene_.addEntity(tello);
   scene_.addEntity(cube);
@@ -97,6 +94,8 @@ int MyWindow::init() {
 
   camera_.create(scene_width_, scene_height_, glm::vec3(0.0, 1.0, 2.0), 45.0f,
                  0.1f, 100.0f);
+
+  renderer_.create(&scene_, &camera_);
 
   return 1;
 }
@@ -130,19 +129,8 @@ void MyWindow::update() {
       glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
-    shader_.activate();
-
-    glm::mat4 view_proj = camera_.getViewProjMatrix();
-    // shader_.setUniform("view_projection", glm::value_ptr(view_proj));
-
-    for (const auto &root : scene_.getEntities()) {
-      root->setViewProj(view_proj);
-      root->draw();
-      for (const auto &child : root->getChildren()) {
-        child->setViewProj(view_proj);
-        child->draw();
-      }
-    }
+    // Draw scene graph
+    renderer_.draw();
 
     framebuffer_.unbind();
 
@@ -273,7 +261,7 @@ void MyWindow::update() {
 
     ImGui::End();
 
-    ImGui::Begin("Transform");
+    ImGui::Begin("Properties");
     if (selected_entity_) {
       ImGui::Text("ID : %i", selected_entity_->getID());
       glm::vec3 position = selected_entity_->getPosition();
@@ -282,13 +270,40 @@ void MyWindow::update() {
       ImGui::InputFloat3("Position", glm::value_ptr(position));
       ImGui::InputFloat3("Rotation", glm::value_ptr(rotation));
       ImGui::InputFloat3("Scale", glm::value_ptr(scale));
+
+      Material *mat = selected_entity_->getMaterial();
+
+      if (mat) {
+        ImGui::Text("Material : %s", mat->getName().c_str());
+        Texture *diffuse = mat->getDiffuse();
+        if (diffuse) {
+          ImGui::Text("Diffuse : %s", diffuse->getName().c_str());
+        }
+      }
     }
+    ImGui::End();
+
+    ImGui::Begin("Assets");
+
+    if (ImGui::CollapsingHeader("meshes")) {
+      for (const auto &mesh : Assets::get().meshes) {
+        ImGui::Text("%s", mesh->getName().c_str());
+      }
+    }
+
+    if (ImGui::CollapsingHeader("materials")) {
+      for (const auto &material : Assets::get().materials) {
+        ImGui::Text("%s", material->getName().c_str());
+      }
+    }
+
     ImGui::End();
 
     // ImGuiWindowFlags flags =
     //     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking |
-    //     ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings
-    //     | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+    //     ImGuiWindowFlags_AlwaysAutoResize |
+    //     ImGuiWindowFlags_NoSavedSettings |
+    //     ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
     // ImGui::SetNextWindowBgAlpha(0.35f);  // Transparent background
     // if (ImGui::Begin("Example: Simple overlay", NULL, flags)) {
     //   ImGui::Text("ifps : %f s", ifps_);
@@ -460,7 +475,7 @@ void MyWindow::showEntities(const std::vector<Entity *> &entities) {
 Entity *MyWindow::createGrid(int width, int height) {
   // GRID
   Texture *texture = new Texture;
-  texture->loadFromImage("models/grid.png", "texture_diffuse");
+  texture->loadFromImage("models/grid.png", TextureType::DIFFUSE);
   // texture.loadFromImage("models/debug.jpg", "texture_diffuse");
 
   Mesh *mesh = new Mesh;
@@ -514,8 +529,8 @@ Entity *MyWindow::createCube(int x, int y, int z) {
   std::vector<Vertex> vertices;
 
   Texture *texture = new Texture;
-  texture->loadFromImage("models/grid.png", "texture_diffuse");
-  // texture.loadFromImage("models/debug.jpg", "texture_diffuse");
+  // texture->loadFromImage("models/grid.png", TextureType::DIFFUSE);
+  texture->loadFromImage("models/debug.jpg", TextureType::DIFFUSE);
 
   Mesh *mesh = new Mesh;
 

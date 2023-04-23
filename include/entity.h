@@ -41,7 +41,7 @@ class Entity {
 
   unsigned int getID();
 
-  void setViewProj(glm::mat4 view_proj);
+  Material* getMaterial();
 
  private:
   glm::mat4 parent_transform_ = glm::mat4(1.0f);
@@ -57,8 +57,6 @@ class Entity {
   std::vector<Entity*> children_;
   unsigned int id_;
   std::string name_;
-
-  glm::mat4 view_proj_;
 
   void updateMatrix();
 };

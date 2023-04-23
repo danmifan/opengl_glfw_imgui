@@ -21,6 +21,7 @@
 #include "entity.h"
 #include "model.h"
 #include "scene.h"
+#include "renderer.h"
 
 class MyWindow {
  public:
@@ -41,6 +42,7 @@ class MyWindow {
   Scene scene_;
   Camera camera_;
   Framebuffer framebuffer_;
+  Renderer renderer_;
 
   bool demo_ = false;
   bool metrics_ = false;

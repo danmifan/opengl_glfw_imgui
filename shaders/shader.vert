@@ -8,9 +8,11 @@ layout(location = 2) in vec2 tex_coords;
 out vec2 o_tex_coords;
 
 uniform mat4 model;
-uniform mat4 view_projection;
+// uniform mat4 view_projection;
+uniform mat4 mvp;
 
 void main() {
   o_tex_coords = tex_coords;
-  gl_Position = view_projection * model * vec4(pos, 1.0);
+  // gl_Position = view_projection * model * vec4(pos, 1.0);
+  gl_Position = mvp * vec4(pos, 1.0);
 }

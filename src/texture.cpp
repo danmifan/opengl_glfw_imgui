@@ -29,7 +29,7 @@ GLuint Texture::create(GLenum target, GLint internal_format, int width,
   return id_;
 }
 
-void Texture::loadFromImage(std::string path, std::string type_name) {
+void Texture::loadFromImage(std::string path, TextureType type) {
   glGenTextures(1, &id_);
   // stbi_set_flip_vertically_on_load(true);
 
@@ -66,7 +66,7 @@ void Texture::loadFromImage(std::string path, std::string type_name) {
 
     std::cout << "Texture : " << path << " loaded" << std::endl;
     std::cout << width << " " << height << " "
-              << " " << type_name << " " << nb_components << std::endl;
+              << " " << nb_components << std::endl;
 
     stbi_image_free(data);
 
@@ -75,19 +75,9 @@ void Texture::loadFromImage(std::string path, std::string type_name) {
     stbi_image_free(data);
   }
 
-  type_name_ = type_name;
+  type_ = type;
   path_ = path;
 }
-
-// void Texture::texUnit(Shader& shader, const char* uniform, GLuint unit)
-// {
-// 	// Gets the location of the uniform
-// 	GLuint texUni = glGetUniformLocation(shader.ID, uniform);
-// 	// Shader needs to be activated before changing the value of a uniform
-// 	shader.Activate();
-// 	// Sets the value of the uniform
-// 	glUniform1i(texUni, unit);
-// }
 
 void Texture::bind() { glBindTexture(GL_TEXTURE_2D, id_); }
 
@@ -99,9 +89,9 @@ GLuint Texture::getId() { return id_; }
 
 std::string Texture::getPath() { return path_; }
 
-std::string Texture::getTypeName() { return type_name_; }
+TextureType Texture::getType() { return type_; }
 
-void Texture::loadDDSFile(std::string filepath, std::string type_name) {
+void Texture::loadDDSFile(std::string filepath, TextureType type) {
   unsigned char header[124];
 
   FILE* fp;
@@ -135,7 +125,8 @@ void Texture::loadDDSFile(std::string filepath, std::string type_name) {
   /* close the file pointer */
   fclose(fp);
 
-  unsigned int components = (fourCC == MAKEFOURCC('D', 'X', 'T', '1')) ? 3 : 4;
+  // unsigned int components = (fourCC == MAKEFOURCC('D', 'X', 'T', '1')) ? 3 :
+  // 4;
   unsigned int format;
   switch (fourCC) {
     case MAKEFOURCC('D', 'X', 'T', '1'):
@@ -176,6 +167,10 @@ void Texture::loadDDSFile(std::string filepath, std::string type_name) {
   }
   free(buffer);
 
-  type_name_ = type_name;
+  type_ = type;
   path_ = filepath;
 }
+
+void Texture::setName(std::string name) { name_ = name; }
+
+std::string Texture::getName() { return name_; }

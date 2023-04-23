@@ -71,6 +71,7 @@ void Entity::setTransform(glm::mat4 transform) {
   // glm::quat rotation;
   glm::vec3 skew;
   glm::vec4 perspective;
+#warning check decompose order for rotations
   glm::decompose(local_transform_, scale_, rotation_, position_, skew,
                  perspective);
 
@@ -108,9 +109,6 @@ void Entity::updateMatrix() {
 
 void Entity::draw() {
   if (mesh_ && material_) {
-    material_->setUniform("view_projection", glm::value_ptr(view_proj_));
-    material_->setUniform("model", glm::value_ptr(world_transform_));
-    material_->draw();
     mesh_->draw();
   }
 }
@@ -141,4 +139,4 @@ void Entity::setName(std::string name) { name_ = name; }
 
 std::string Entity::getName() { return name_; }
 
-void Entity::setViewProj(glm::mat4 view_proj) { view_proj_ = view_proj; }
+Material* Entity::getMaterial() { return material_; }
