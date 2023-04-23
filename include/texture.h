@@ -25,7 +25,7 @@ class Texture {
 
  private:
   GLuint id_;
-  GLenum target_;
+  GLenum target_ = GL_TEXTURE_2D;
   std::string path_ = "default";
   TextureType type_;
   std::string name_;

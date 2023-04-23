@@ -55,6 +55,8 @@ int MyWindow::init() {
 
   glfwMakeContextCurrent(window_);
   glfwSwapInterval(1);
+  // MSAA
+  glfwWindowHint(GLFW_SAMPLES, 4);
 
   if (glewInit() != GLEW_OK) {
     std::cout << "GLEW ERROR" << std::endl;
@@ -102,6 +104,7 @@ int MyWindow::init() {
 
 void MyWindow::update() {
   glEnable(GL_DEPTH_TEST);
+  glEnable(GL_MULTISAMPLE);
   glDepthFunc(GL_LESS);
   // glEnable(GL_CULL_FACE);
   // glFrontFace(GL_CCW);
